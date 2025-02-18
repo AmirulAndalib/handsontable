@@ -2,6 +2,7 @@ import {
   addClass,
   getScrollbarWidth,
   getScrollLeft,
+  getMaximumScrollLeft,
   getWindowScrollTop,
   hasClass,
   outerWidth,
@@ -11,7 +12,7 @@ import {
 } from '../../../../helpers/dom/element';
 import InlineStartOverlayTable from '../table/inlineStart';
 import { Overlay } from './_base';
-import { CORNER_DEFAULT_STYLE } from '../selection';
+import { getCornerStyle } from '../selection';
 import {
   CLONE_INLINE_START,
 } from './constants';
@@ -58,7 +59,7 @@ export class InlineStartOverlay extends Overlay {
   resetFixedPosition() {
     const { wtTable } = this.wot;
 
-    if (!this.needFullRender || !wtTable.holder.parentNode) {
+    if (!this.needFullRender || !this.shouldBeRendered() || !wtTable.holder.parentNode) {
       // removed from DOM
       return false;
     }
@@ -130,7 +131,7 @@ export class InlineStartOverlay extends Overlay {
     let sum = 0;
 
     while (column < to) {
-      sum += this.wot.wtTable.getStretchedColumnWidth(column) || defaultColumnWidth;
+      sum += this.wot.wtTable.getColumnWidth(column) || defaultColumnWidth;
       column += 1;
     }
 
@@ -138,14 +139,12 @@ export class InlineStartOverlay extends Overlay {
   }
 
   /**
-   * Adjust overlay root element, childs and master table element sizes (width, height).
-   *
-   * @param {boolean} [force=false] When `true`, it adjusts the DOM nodes sizes for that overlay.
+   * Adjust overlay root element, children and master table element sizes (width, height).
    */
-  adjustElementsSize(force = false) {
+  adjustElementsSize() {
     this.updateTrimmingContainer();
 
-    if (this.needFullRender || force) {
+    if (this.needFullRender) {
       this.adjustRootElementSize();
       this.adjustRootChildrenSize();
     }
@@ -155,18 +154,17 @@ export class InlineStartOverlay extends Overlay {
    * Adjust overlay root element size (width and height).
    */
   adjustRootElementSize() {
-    const { wtTable } = this.wot;
+    const { wtTable, wtViewport } = this.wot;
     const { rootDocument, rootWindow } = this.domBindings;
-    const scrollbarHeight = getScrollbarWidth(rootDocument);
     const overlayRoot = this.clone.wtTable.holder.parentNode;
     const overlayRootStyle = overlayRoot.style;
     const preventOverflow = this.wtSettings.getSetting('preventOverflow');
 
     if (this.trimmingContainer !== rootWindow || preventOverflow === 'vertical') {
-      let height = this.wot.wtViewport.getWorkspaceHeight();
+      let height = wtViewport.getWorkspaceHeight();
 
-      if (this.wot.wtOverlays.hasScrollbarBottom) {
-        height -= scrollbarHeight;
+      if (wtViewport.hasHorizontalScroll()) {
+        height -= getScrollbarWidth(rootDocument);
       }
 
       height = Math.min(height, wtTable.wtRootElement.scrollHeight);
@@ -188,8 +186,9 @@ export class InlineStartOverlay extends Overlay {
    */
   adjustRootChildrenSize() {
     const { holder } = this.clone.wtTable;
+    const cornerStyle = getCornerStyle(this.wot);
     const selectionCornerOffset = this.wot.selectionManager
-      .getFocusSelection() ? parseInt(CORNER_DEFAULT_STYLE.width, 10) / 2 : 0;
+      .getFocusSelection() ? parseInt(cornerStyle.width, 10) / 2 : 0;
 
     this.clone.wtTable.hider.style.height = this.hider.style.height;
     holder.style.height = holder.parentNode.style.height;
@@ -247,9 +246,17 @@ export class InlineStartOverlay extends Overlay {
    * @returns {boolean}
    */
   scrollTo(sourceCol, beyondRendered) {
-    let newX = this.getTableParentOffset();
+    const { wtSettings } = this;
+    const rowHeaders = wtSettings.getSetting('rowHeaders');
+    const fixedColumnsStart = wtSettings.getSetting('fixedColumnsStart');
     const sourceInstance = this.wot.cloneSource ? this.wot.cloneSource : this.wot;
     const mainHolder = sourceInstance.wtTable.holder;
+    const rowHeaderBorderCompensation = (
+      fixedColumnsStart === 0 &&
+      rowHeaders.length > 0 &&
+      !hasClass(mainHolder.parentNode, 'innerBorderInlineStart')
+    ) ? 1 : 0;
+    let newX = this.getTableParentOffset();
     let scrollbarCompensation = 0;
 
     if (beyondRendered) {
@@ -264,16 +271,26 @@ export class InlineStartOverlay extends Overlay {
     if (beyondRendered && mainHolder.offsetWidth !== mainHolder.clientWidth) {
       scrollbarCompensation = getScrollbarWidth(this.domBindings.rootDocument);
     }
-
     if (beyondRendered) {
       newX += this.sumCellSizes(0, sourceCol + 1);
       newX -= this.wot.wtViewport.getViewportWidth();
+      // Compensate for the right header border if scrolled from the absolute left.
+      newX += rowHeaderBorderCompensation;
 
     } else {
       newX += this.sumCellSizes(this.wtSettings.getSetting('fixedColumnsStart'), sourceCol);
     }
 
     newX += scrollbarCompensation;
+
+    // If the table is scrolled all the way left when starting the scroll and going to be scrolled to the far right,
+    // we need to compensate for the potential header border width.
+    if (
+      getMaximumScrollLeft(this.mainTableScrollableElement) === newX - rowHeaderBorderCompensation &&
+      rowHeaderBorderCompensation > 0
+    ) {
+      this.wot.wtOverlays.expandHiderHorizontallyBy(rowHeaderBorderCompensation);
+    }
 
     return this.setScrollPosition(newX);
   }
@@ -339,10 +356,12 @@ export class InlineStartOverlay extends Overlay {
    * @returns {boolean}
    */
   adjustHeaderBordersPosition(position) {
+    const { wtSettings } = this;
     const masterParent = this.wot.wtTable.holder.parentNode;
-    const rowHeaders = this.wtSettings.getSetting('rowHeaders');
-    const fixedColumnsStart = this.wtSettings.getSetting('fixedColumnsStart');
-    const totalRows = this.wtSettings.getSetting('totalRows');
+    const rowHeaders = wtSettings.getSetting('rowHeaders');
+    const fixedColumnsStart = wtSettings.getSetting('fixedColumnsStart');
+    const totalRows = wtSettings.getSetting('totalRows');
+    const preventVerticalOverflow = wtSettings.getSetting('preventOverflow') === 'vertical';
 
     if (totalRows) {
       removeClass(masterParent, 'emptyRows');
@@ -352,19 +371,21 @@ export class InlineStartOverlay extends Overlay {
 
     let positionChanged = false;
 
-    if (fixedColumnsStart && !rowHeaders.length) {
-      // "innerBorderLeft" is for backward compatibility
-      addClass(masterParent, 'innerBorderLeft innerBorderInlineStart');
-
-    } else if (!fixedColumnsStart && rowHeaders.length) {
-      const previousState = hasClass(masterParent, 'innerBorderInlineStart');
-
-      if (position) {
+    if (!preventVerticalOverflow) {
+      if (fixedColumnsStart && !rowHeaders.length) {
+        // "innerBorderLeft" is for backward compatibility
         addClass(masterParent, 'innerBorderLeft innerBorderInlineStart');
-        positionChanged = !previousState;
-      } else {
-        removeClass(masterParent, 'innerBorderLeft innerBorderInlineStart');
-        positionChanged = previousState;
+
+      } else if (!fixedColumnsStart && rowHeaders.length) {
+        const previousState = hasClass(masterParent, 'innerBorderInlineStart');
+
+        if (position) {
+          addClass(masterParent, 'innerBorderLeft innerBorderInlineStart');
+          positionChanged = !previousState;
+        } else {
+          removeClass(masterParent, 'innerBorderLeft innerBorderInlineStart');
+          positionChanged = previousState;
+        }
       }
     }
 

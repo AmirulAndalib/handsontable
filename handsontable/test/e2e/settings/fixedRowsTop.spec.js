@@ -80,7 +80,7 @@ describe('settings', () => {
           fixedRowsTop: 0
         });
 
-        expect(getTopClone().find('tbody tr').length).toEqual(2);
+        expect(getTopClone().find('tbody tr').length).toBe(0);
         expect(getInlineStartClone().height()).toBe(0);
       });
 
@@ -187,6 +187,24 @@ describe('settings', () => {
       expect(getTopClone().find('tbody tr').length).toBe(3);
     });
 
+    it('should be possible to hide overlay when there are no headers enabled', () => {
+      const hot = handsontable({
+        colHeaders: false,
+        rowHeaders: false,
+        fixedRowsTop: 2,
+      });
+
+      updateSettings({
+        fixedRowsTop: 0,
+      });
+
+      hot.view.adjustElementsSize(); // this was causing a bug (#dev-678)
+
+      expect(getTopClone().width()).toBe(0);
+      expect(getTopClone().height()).toBe(0);
+      expect(getTopClone().find('tbody tr').length).toBe(0);
+    });
+
     it('should not render column header with doubled border after inserting a new row (#7065)', () => {
       handsontable({
         data: Handsontable.helper.createSpreadsheetData(0, 0),
@@ -197,18 +215,42 @@ describe('settings', () => {
 
       alter('insert_row_above', 0);
 
-      expect(getMaster().height()).toBe(50); // 25px corner + 25px added row
-      expect(getTopClone().height()).toBe(50);
-      expect(getTopInlineStartClone().height()).toBe(50);
-      expect(getInlineStartClone().height()).toBe(50);
+      expect(getMaster().height()).forThemes(({ classic, main }) => {
+        classic.toBe(50); // 25px corner + 25px added row
+        main.toBe(59);
+      });
+      expect(getTopClone().height()).forThemes(({ classic, main }) => {
+        classic.toBe(50);
+        main.toBe(59);
+      });
+      expect(getTopInlineStartClone().height()).forThemes(({ classic, main }) => {
+        classic.toBe(50);
+        main.toBe(59);
+      });
+      expect(getInlineStartClone().height()).forThemes(({ classic, main }) => {
+        classic.toBe(50);
+        main.toBe(59);
+      });
       expect(getBottomClone().height()).toBe(0);
 
       alter('insert_row_above', 0);
 
-      expect(getMaster().height()).toBe(73);
-      expect(getTopClone().height()).toBe(73);
-      expect(getTopInlineStartClone().height()).toBe(73);
-      expect(getInlineStartClone().height()).toBe(73);
+      expect(getMaster().height()).forThemes(({ classic, main }) => {
+        classic.toBe(73);
+        main.toBe(88);
+      });
+      expect(getTopClone().height()).forThemes(({ classic, main }) => {
+        classic.toBe(73);
+        main.toBe(88);
+      });
+      expect(getTopInlineStartClone().height()).forThemes(({ classic, main }) => {
+        classic.toBe(73);
+        main.toBe(88);
+      });
+      expect(getInlineStartClone().height()).forThemes(({ classic, main }) => {
+        classic.toBe(73);
+        main.toBe(88);
+      });
       expect(getBottomClone().height()).toBe(0);
     });
   });

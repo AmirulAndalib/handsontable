@@ -1,5 +1,6 @@
 import Handsontable from 'handsontable';
-import 'handsontable/dist/handsontable.full.min.css';
+import 'handsontable/styles/handsontable.css';
+import 'handsontable/styles/ht-theme-main.css';
 
 const container = document.querySelector('#example1');
 const hot = new Handsontable(container, {
@@ -8,7 +9,7 @@ const hot = new Handsontable(container, {
     ['Citroen', 'C4 Coupe', '10 30', 8330],
     ['Audi', 'A4 Avant', '8:00 PM', 33900],
     ['Opel', 'Astra', 1332284400000, 7000],
-    ['BMW', '320i Coupe', 1332284400000, 30500]
+    ['BMW', '320i Coupe', 1332284400000, 30500],
   ],
   colHeaders: ['Car', 'Model', 'Registration time', 'Price'],
   columnSorting: true,
@@ -24,14 +25,14 @@ const hot = new Handsontable(container, {
     {
       type: 'time',
       timeFormat: 'h:mm:ss a',
-      correctFormat: true
+      correctFormat: true,
     },
     {
       type: 'numeric',
       numericFormat: {
-        pattern: '$ 0,0.00'
-      }
-    }
+        pattern: '$ 0,0.00',
+      },
+    },
   ],
   autoWrapRow: true,
   autoWrapCol: true,

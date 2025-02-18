@@ -13,6 +13,7 @@ react:
   id: mlctr1ri
   metaTitle: Clipboard - React Data Grid | Handsontable
 searchCategory: Guides
+category: Cell features
 ---
 
 # Clipboard
@@ -54,9 +55,10 @@ You can use them in the same way as the rest of the predefined items in the [con
 
 ::: only-for javascript
 
-::: example #example1
+::: example #example1 --js 1 --ts 2
 
 @[code](@/content/guides/cell-features/clipboard/javascript/example1.js)
+@[code](@/content/guides/cell-features/clipboard/javascript/example1.ts)
 
 :::
 
@@ -64,9 +66,10 @@ You can use them in the same way as the rest of the predefined items in the [con
 
 ::: only-for react
 
-::: example #example1 :react
+::: example #example1 :react --js 1 --ts 2
 
 @[code](@/content/guides/cell-features/clipboard/react/example1.jsx)
+@[code](@/content/guides/cell-features/clipboard/react/example1.tsx)
 
 :::
 
@@ -101,11 +104,11 @@ The [`CopyPaste`](@/api/copyPaste.md) plugin listens to the browser's `copy` and
 
 ::: only-for javascript
 
-::: example #example3 --html 1 --js 2
+::: example #example3 --html 1 --js 2 --ts 3
 
 @[code](@/content/guides/cell-features/clipboard/javascript/example3.html)
-
 @[code](@/content/guides/cell-features/clipboard/javascript/example3.js)
+@[code](@/content/guides/cell-features/clipboard/javascript/example3.ts)
 
 :::
 
@@ -113,9 +116,10 @@ The [`CopyPaste`](@/api/copyPaste.md) plugin listens to the browser's `copy` and
 
 ::: only-for react
 
-::: example #example3 :react
+::: example #example3 :react --js 1 --ts 2
 
 @[code](@/content/guides/cell-features/clipboard/react/example3.jsx)
+@[code](@/content/guides/cell-features/clipboard/react/example3.tsx)
 
 :::
 
@@ -138,19 +142,24 @@ Examples of how to use them are provided in their descriptions.
 
 You can let the end user copy the contents of column headers, by enabling additional [context menu](@/guides/accessories-and-menus/context-menu/context-menu.md) items:
 
+<span class="img-invert">
+
 | Context menu item         | Copied area                                                               |
 | ------------------------- | ------------------------------------------------------------------------- |
 | Copy with header       | ![copy_with_headers]({{$basePath}}/img/copy_with_headers.png)             |
 | Copy with group header | ![copy_with_group_headers]({{$basePath}}/img/copy_with_group_headers.png) |
 | Copy header only       | ![copy_headers_only]({{$basePath}}/img/copy_headers_only.png)             |
 
+</span>
+
 Right-click on a cell to try it out:
 
 ::: only-for javascript
 
-::: example #example2
+::: example #example2 --js 1 --ts 2
 
 @[code](@/content/guides/cell-features/clipboard/javascript/example2.js)
+@[code](@/content/guides/cell-features/clipboard/javascript/example2.ts)
 
 :::
 
@@ -158,9 +167,10 @@ Right-click on a cell to try it out:
 
 ::: only-for react
 
-::: example #example2 :react
+::: example #example2 :react --js 1 --ts 2
 
 @[code](@/content/guides/cell-features/clipboard/react/example2.jsx)
+@[code](@/content/guides/cell-features/clipboard/react/example2.tsx)
 
 :::
 
@@ -250,6 +260,7 @@ Examples of how to use them are provided in their descriptions.
 1. The [`CopyPaste`](@/api/copyPaste.md) plugin doesn't copy, cut or paste cells' appearance.
 2. The data copied from Handsontable will always remain as plain text. For example, if you copy a checked checkbox, the input will be kept as the value of `'true'`.
 3. `document.execCommand` can be called only during an immediate-execute event, such as a `MouseEvent` or a `KeyboardEvent`.
+4. Clipboard operations don’t work in Chrome 133+ with Handsontable 14.6.0, 14.6.1, or 15.0.0. Update to 14.6.2 or 15.0.1+. See the [incident announcement](https://handsontable.com/blog/incident-report-handsontable-14.6-15.0-clipboard-disruption-in-chrome-133) for details.
 
 ## Related keyboard shortcuts
 

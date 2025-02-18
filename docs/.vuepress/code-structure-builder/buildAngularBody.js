@@ -1,4 +1,4 @@
-const buildAngularBody = ({ html, js, version }) => {
+const buildAngularBody = ({ html, js, version, hyperformulaVersion }) => {
   const codeParts = js.matchAll(/\/\* file:(.*?)\*\/(.*?)\/\* end-file \*\//gs);
   const codePartsObject = [...codeParts]?.reduce((acc, curr) => {
     const name = curr?.[1].trim();
@@ -40,7 +40,7 @@ const buildAngularBody = ({ html, js, version }) => {
     "rxjs": "^7.8.0",
     "tslib": "^2.6.2",
     "zone.js": "^0.14.4",
-    "hyperformula": "^2.4.0",
+    "hyperformula": "${hyperformulaVersion}",
     "handsontable": "${version}",
     "@handsontable/angular": "${version}"
   },
@@ -82,7 +82,8 @@ const buildAngularBody = ({ html, js, version }) => {
             "polyfills": ["zone.js"],
             "tsConfig": "tsconfig.app.json",
             "styles": [
-              "node_modules/handsontable/dist/handsontable.full.css"
+              "node_modules/handsontable/styles/handsontable.min.css",
+              "node_modules/handsontable/styles/ht-theme-main.min.css"
             ],
             "scripts": [],
             "preserveSymlinks": true,
@@ -209,7 +210,7 @@ const buildAngularBody = ({ html, js, version }) => {
     <meta charset="utf-8" />
     <title>Handsontable for Angular example</title>
     <base href="." />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   </head>
   <body>
     ${html || '<app-root></app-root>'}

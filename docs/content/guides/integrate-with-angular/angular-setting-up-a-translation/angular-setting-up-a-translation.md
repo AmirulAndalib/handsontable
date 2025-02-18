@@ -5,7 +5,11 @@ metaTitle: Setting up a translation - Angular Data Grid | Handsontable
 description: Configure your Angular data grid with different number formats, depending on the specified language and culture.
 permalink: /angular-setting-up-a-translation
 canonicalUrl: /angular-setting-up-a-translation
+react:
+  id: x0ixc386
+  metaTitle: Setting up a translation - Angular Data Grid | Handsontable
 searchCategory: Guides
+category: Integrate with Angular
 ---
 
 # Setting up a translation in Angular

@@ -1,8 +1,10 @@
 import Handsontable from 'handsontable';
-import 'handsontable/dist/handsontable.full.min.css';
+import 'handsontable/styles/handsontable.css';
+import 'handsontable/styles/ht-theme-main.css';
 
 const container = document.querySelector('#exampleFilterDifferentTypes');
-const handsontableInstance = new Handsontable(container, {
+
+new Handsontable(container, {
   data: [
     {
       model: 'Racing Socks',
@@ -54,7 +56,7 @@ const handsontableInstance = new Handsontable(container, {
     {
       title: 'Model',
       // set the type of the 'Model' column
-      type: 'text', // 'text' is the default type, so you can omit this line
+      type: 'text',
       data: 'model',
     },
     {
@@ -113,7 +115,7 @@ const handsontableInstance = new Handsontable(container, {
   filters: true,
   // enable the column menu
   dropdownMenu: true,
-  height: 142,
+  height: 175,
   autoWrapRow: true,
   autoWrapCol: true,
   licenseKey: 'non-commercial-and-evaluation',

@@ -19,6 +19,7 @@ react:
   id: 05z3cjez
   metaTitle: Formula calculation - React Data Grid | Handsontable
 searchCategory: Guides
+category: Formulas
 ---
 
 # Formula calculation
@@ -56,13 +57,12 @@ Double click on a cell to open the editor and preview the formula.
 
 ::: only-for javascript
 
-::: example #example1 --html 1 --css 2 --js 3
+::: example #example1 --html 1 --css 2 --js 3 --ts 4
 
 @[code](@/content/guides/formulas/formula-calculation/javascript/example1.html)
-
 @[code](@/content/guides/formulas/formula-calculation/javascript/example1.css)
-
 @[code](@/content/guides/formulas/formula-calculation/javascript/example1.js)
+@[code](@/content/guides/formulas/formula-calculation/javascript/example1.ts)
 
 :::
 
@@ -70,11 +70,11 @@ Double click on a cell to open the editor and preview the formula.
 
 ::: only-for react
 
-::: example #example1 :react --css 1 --js 2
+::: example #example1 :react --css 1 --js 2 --ts 3
 
 @[code](@/content/guides/formulas/formula-calculation/react/example1.css)
-
 @[code](@/content/guides/formulas/formula-calculation/react/example1.jsx)
+@[code](@/content/guides/formulas/formula-calculation/react/example1.tsx)
 
 :::
 
@@ -87,9 +87,10 @@ This example is more typical of data grids than spreadsheets. Calculations are p
 
 ::: only-for javascript
 
-::: example #example-data-grid
+::: example #example-data-grid --js 1 --ts 2
 
 @[code](@/content/guides/formulas/formula-calculation/javascript/example-data-grid.js)
+@[code](@/content/guides/formulas/formula-calculation/javascript/example-data-grid.ts)
 
 :::
 
@@ -97,9 +98,10 @@ This example is more typical of data grids than spreadsheets. Calculations are p
 
 ::: only-for react
 
-::: example #example-data-grid :react
+::: example #example-data-grid :react --js 1 --ts 2
 
 @[code](@/content/guides/formulas/formula-calculation/react/example-data-grid.jsx)
+@[code](@/content/guides/formulas/formula-calculation/react/example-data-grid.tsx)
 
 :::
 
@@ -124,6 +126,8 @@ There are also other installation methods available. Check out
 To use the [`Formulas`](@/api/formulas.md) plugin with an external HyperFormula instance, initialize
 HyperFormula with the `'internal-use-in-handsontable'` license key:
 
+:::
+
 ```js
 // create an external HyperFormula instance
 const hyperformulaInstance = HyperFormula.buildEmpty({
@@ -131,8 +135,6 @@ const hyperformulaInstance = HyperFormula.buildEmpty({
   licenseKey: 'internal-use-in-handsontable',
 });
 ```
-
-:::
 
 ### Pass the HyperFormula class/instance to Handsontable
 
@@ -447,11 +449,11 @@ pass an array with `name` and `expression` to your `formulas` configuration obje
 
 ::: only-for javascript
 
-::: example #example-named-expressions1 --html 1 --js 2
+::: example #example-named-expressions1 --html 1 --js 2 --ts 3
 
 @[code](@/content/guides/formulas/formula-calculation/javascript/example-named-expressions1.html)
-
 @[code](@/content/guides/formulas/formula-calculation/javascript/example-named-expressions1.js)
+@[code](@/content/guides/formulas/formula-calculation/javascript/example-named-expressions1.ts)
 
 :::
 
@@ -461,16 +463,17 @@ pass an array with `name` and `expression` to your `formulas` configuration obje
 
 ::: only-for react
 
-::: example #example-named-expressions1 :react
+::: example #example-named-expressions1 :react --js 1 --ts 2
 
 @[code](@/content/guides/formulas/formula-calculation/react/example-named-expressions1.jsx)
+@[code](@/content/guides/formulas/formula-calculation/react/example-named-expressions1.tsx)
 
 :::
 
 :::
 
 For more information about named expressions, refer to the
-[HyperFormula docs](https://handsontable.github.io/hyperformula/guide/named-ranges.html).
+[HyperFormula docs](https://hyperformula.handsontable.com/guide/cell-references.html#relative-references).
 
 ## View the explainer video
 
@@ -488,15 +491,17 @@ Different versions of Handsontable support different versions of HyperFormula.
 
 To find out which HyperFormula version to use, see the table below:
 
-| Handsontable version                                                                    | HyperFormula version                                                                                           |
-| --------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| [`8.x.x`](https://github.com/handsontable/handsontable/releases/tag/8.0.0) and lower    | No HyperFormula support (old [Formulas](https://handsontable.com/docs/8.0.0/demo-formula-support.html) plugin) |
-| [`9.x.x`](https://github.com/handsontable/handsontable/releases/tag/9.0.0)              | [`0.6.2`](https://github.com/handsontable/hyperformula/releases/tag/0.6.2)                                     |
-| [`10.x.x`](https://github.com/handsontable/handsontable/releases/tag/10.0.0)            | [`^1.2.0`](https://github.com/handsontable/hyperformula/releases/tag/1.2.0)                                    |
-| [`11.x.x`](https://github.com/handsontable/handsontable/releases/tag/11.0.0)            | [`^1.2.0`](https://github.com/handsontable/hyperformula/releases/tag/1.2.0)                                    |
-| [`12.x.x`](https://github.com/handsontable/handsontable/releases/tag/12.0.0)            | [`^2.0.0`](https://github.com/handsontable/hyperformula/releases/tag/2.0.0)                                    |
-| [`13.x.x`](https://github.com/handsontable/handsontable/releases/tag/13.0.0)            | [`^2.4.0`](https://github.com/handsontable/hyperformula/releases/tag/2.4.0)                                    |
-| [`14.x.x`](https://github.com/handsontable/handsontable/releases/tag/14.0.0) and higher | [`^2.4.0`](https://github.com/handsontable/hyperformula/releases/tag/2.4.0)                                    |
+| Handsontable version                                                                    | HyperFormula version                                                        |
+|-----------------------------------------------------------------------------------------|-----------------------------------------------------------------------------|
+| [`8.x.x`](https://github.com/handsontable/handsontable/releases/tag/8.0.0) and lower    | No HyperFormula support
+| [`9.x.x`](https://github.com/handsontable/handsontable/releases/tag/9.0.0)              | [`0.6.2`](https://github.com/handsontable/hyperformula/releases/tag/0.6.2)  |
+| [`10.x.x`](https://github.com/handsontable/handsontable/releases/tag/10.0.0)            | [`^1.2.0`](https://github.com/handsontable/hyperformula/releases/tag/1.2.0) |
+| [`11.x.x`](https://github.com/handsontable/handsontable/releases/tag/11.0.0)            | [`^1.2.0`](https://github.com/handsontable/hyperformula/releases/tag/1.2.0) |
+| [`12.x.x`](https://github.com/handsontable/handsontable/releases/tag/12.0.0)            | [`^2.0.0`](https://github.com/handsontable/hyperformula/releases/tag/2.0.0) |
+| [`13.x.x`](https://github.com/handsontable/handsontable/releases/tag/13.0.0)            | [`^2.4.0`](https://github.com/handsontable/hyperformula/releases/tag/2.4.0) |
+| [`14.x.x`](https://github.com/handsontable/handsontable/releases/tag/14.0.0)            | [`^2.4.0`](https://github.com/handsontable/hyperformula/releases/tag/2.4.0) |
+| [`14.3.x - 15.0.x`](https://github.com/handsontable/handsontable/releases/tag/14.3.0)   | [`^2.6.2`](https://github.com/handsontable/hyperformula/releases/tag/2.6.2) |
+| [`15.1.x`](https://github.com/handsontable/handsontable/releases/tag/15.1.0) and higher | [`^3.0.0`](https://github.com/handsontable/hyperformula/releases/tag/3.0.0) |
 
 ::: tip
 
@@ -513,13 +518,21 @@ details, [contact our Sales Team](https://handsontable.com/get-a-quote).
 
 ### HyperFormula documentation
 
+<div class="boxes-list gray">
+
 - [HyperFormula guides](https://handsontable.github.io/hyperformula/)
 - [HyperFormula API reference](https://handsontable.github.io/hyperformula/api/)
 
+</div>
+
 ### Related blog articles
+
+<div class="boxes-list gray">
 
 - [Handsontable 9.0.0: New formula plugin](https://handsontable.com/blog/handsontable-9.0.0-new-formula-plugin)
 - [8 examples of useful Excel functions in HyperFormula](https://handsontable.com/blog/8-examples-of-useful-excel-functions-in-hyperformula)
+
+</div>
 
 ### Related API reference
 

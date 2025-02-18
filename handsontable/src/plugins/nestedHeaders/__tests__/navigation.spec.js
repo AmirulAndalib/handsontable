@@ -1535,7 +1535,8 @@ describe('NestedHeaders', () => {
       keyDownUp('arrowright'); // "C"
 
       expect(topOverlay().getScrollPosition()).toBe(0);
-      expect(inlineStartOverlay().getScrollPosition()).toBe(65);
+      // 300 column width - 250 viewport width + 15 scrollbar compensation + 1 header border compensation
+      expect(inlineStartOverlay().getScrollPosition()).toBe(66);
 
       keyDownUp('arrowright'); // "D"
 
@@ -1555,12 +1556,18 @@ describe('NestedHeaders', () => {
       keyDownUp('arrowright'); // "G"
 
       expect(topOverlay().getScrollPosition()).toBe(0);
-      expect(inlineStartOverlay().getScrollPosition()).toBe(1266);
+      expect(inlineStartOverlay().getScrollPosition()).forThemes(({ classic, main }) => {
+        classic.toBe(1266);
+        main.toBe(1280);
+      });
 
       keyDownUp('arrowright'); // "H"
 
       expect(topOverlay().getScrollPosition()).toBe(0);
-      expect(inlineStartOverlay().getScrollPosition()).toBe(1316);
+      expect(inlineStartOverlay().getScrollPosition()).forThemes(({ classic, main }) => {
+        classic.toBe(1316);
+        main.toBe(1333);
+      });
     });
 
     it('should scroll the viewport correctly while navigating horizontally using arrows (from right to left)', async() => {
@@ -1648,7 +1655,7 @@ describe('NestedHeaders', () => {
       keyDownUp('arrowup'); // "C"
 
       expect(topOverlay().getScrollPosition()).toBe(0);
-      expect(inlineStartOverlay().getScrollPosition()).toBe(50);
+      expect(inlineStartOverlay().getScrollPosition()).toBe(51);
     });
 
     it('should scroll the viewport correctly while navigating vertically using arrows ' +
@@ -1683,7 +1690,7 @@ describe('NestedHeaders', () => {
       expect(inlineStartOverlay().getScrollPosition()).toBe(50);
     });
 
-    it('should not scroll the viewport when the focus enter to the nested header that is wider than the viewport width', async() => {
+    it('should scroll the viewport when the focus enter to the nested header that is wider than the viewport width', async() => {
       handsontable({
         data: createSpreadsheetData(2, 40),
         height: 200,
@@ -1706,12 +1713,22 @@ describe('NestedHeaders', () => {
       selectCell(-1, 20);
 
       expect(topOverlay().getScrollPosition()).toBe(0);
-      expect(inlineStartOverlay().getScrollPosition()).toBe(800);
+      expect(inlineStartOverlay().getScrollPosition()).toBe(801);
 
-      keyDownUp('arrowup'); // "F"
+      keyDownUp('arrowup'); // scroll to the beginning of the "F" header
 
       expect(topOverlay().getScrollPosition()).toBe(0);
-      expect(inlineStartOverlay().getScrollPosition()).toBe(800);
+      expect(inlineStartOverlay().getScrollPosition()).toBe(750);
+
+      keyDownUp('arrowdown');
+
+      expect(topOverlay().getScrollPosition()).toBe(0);
+      expect(inlineStartOverlay().getScrollPosition()).toBe(801);
+
+      keyDownUp('arrowup'); // scroll to the beginning of the "F" header
+
+      expect(topOverlay().getScrollPosition()).toBe(0);
+      expect(inlineStartOverlay().getScrollPosition()).toBe(750);
     });
   });
 

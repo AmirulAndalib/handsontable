@@ -62,7 +62,7 @@ export class BottomOverlay extends Overlay {
    * @returns {boolean}
    */
   resetFixedPosition() {
-    if (!this.needFullRender || !this.wot.wtTable.holder.parentNode) {
+    if (!this.needFullRender || !this.shouldBeRendered() || !this.wot.wtTable.holder.parentNode) {
       // removed from DOM
       return false;
     }
@@ -147,8 +147,8 @@ export class BottomOverlay extends Overlay {
    * @returns {number} Height sum.
    */
   sumCellSizes(from, to) {
-    const { wtTable, wtSettings } = this.wot;
-    const defaultRowHeight = wtSettings.getSetting('defaultRowHeight');
+    const { wtTable, stylesHandler } = this.wot;
+    const defaultRowHeight = stylesHandler.getDefaultRowHeight();
     let row = from;
     let sum = 0;
 
@@ -163,14 +163,12 @@ export class BottomOverlay extends Overlay {
   }
 
   /**
-   * Adjust overlay root element, childs and master table element sizes (width, height).
-   *
-   * @param {boolean} [force=false] When `true`, it adjusts the DOM nodes sizes for that overlay.
+   * Adjust overlay root element, children and master table element sizes (width, height).
    */
-  adjustElementsSize(force = false) {
+  adjustElementsSize() {
     this.updateTrimmingContainer();
 
-    if (this.needFullRender || force) {
+    if (this.needFullRender) {
       this.adjustRootElementSize();
       this.adjustRootChildrenSize();
     }
@@ -182,7 +180,6 @@ export class BottomOverlay extends Overlay {
   adjustRootElementSize() {
     const { wtTable, wtViewport } = this.wot;
     const { rootDocument, rootWindow } = this.domBindings;
-    const scrollbarWidth = getScrollbarWidth(rootDocument);
     const overlayRoot = this.clone.wtTable.holder.parentNode;
     const overlayRootStyle = overlayRoot.style;
     const preventOverflow = this.wtSettings.getSetting('preventOverflow');
@@ -190,8 +187,8 @@ export class BottomOverlay extends Overlay {
     if (this.trimmingContainer !== rootWindow || preventOverflow === 'horizontal') {
       let width = wtViewport.getWorkspaceWidth();
 
-      if (this.wot.wtOverlays.hasScrollbarRight) {
-        width -= scrollbarWidth;
+      if (wtViewport.hasVerticalScroll()) {
+        width -= getScrollbarWidth(rootDocument);
       }
 
       width = Math.min(width, wtTable.wtRootElement.scrollWidth);
@@ -205,7 +202,7 @@ export class BottomOverlay extends Overlay {
 
     let tableHeight = outerHeight(this.clone.wtTable.TABLE);
 
-    if (!this.wot.wtTable.hasDefinedSize()) {
+    if (!wtTable.hasDefinedSize()) {
       tableHeight = 0;
     }
 

@@ -1,9 +1,9 @@
-import RowHeadersRenderer from './rowHeaders';
-import ColumnHeadersRenderer from './columnHeaders';
-import ColGroupRenderer from './colGroup';
-import RowsRenderer from './rows';
-import CellsRenderer from './cells';
-import TableRenderer from './table';
+import { RowHeadersRenderer } from './rowHeaders';
+import { ColumnHeadersRenderer } from './columnHeaders';
+import { ColGroupRenderer } from './colGroup';
+import { RowsRenderer } from './rows';
+import { CellsRenderer } from './cells';
+import { TableRenderer } from './table';
 
 /**
  * Content renderer.
@@ -11,13 +11,13 @@ import TableRenderer from './table';
  * @class Renderer
  */
 class Renderer {
-  constructor({ TABLE, THEAD, COLGROUP, TBODY, rowUtils, columnUtils, cellRenderer } = {}) {
+  constructor({ TABLE, THEAD, COLGROUP, TBODY, rowUtils, columnUtils, cellRenderer, stylesHandler } = {}) {
     /**
      * General renderer class used to render Walkontable content on screen.
      *
      * @type {TableRenderer}
      */
-    this.renderer = new TableRenderer(TABLE, { cellRenderer });
+    this.renderer = new TableRenderer(TABLE, { cellRenderer, stylesHandler });
     this.renderer.setRenderers({
       rowHeaders: new RowHeadersRenderer(),
       columnHeaders: new ColumnHeadersRenderer(THEAD),
@@ -26,6 +26,18 @@ class Renderer {
       cells: new CellsRenderer(),
     });
     this.renderer.setAxisUtils(rowUtils, columnUtils);
+  }
+
+  /**
+   * Sets the overlay that is currently rendered. If `null` is provided, the master overlay is set.
+   *
+   * @param {'inline_start'|'top'|'top_inline_start_corner'|'bottom'|'bottom_inline_start_corner'|'master'} overlayName The overlay name.
+   * @returns {Renderer}
+   */
+  setActiveOverlayName(overlayName) {
+    this.renderer.setActiveOverlayName(overlayName);
+
+    return this;
   }
 
   /**

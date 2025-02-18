@@ -515,11 +515,32 @@ describe('CopyPaste', () => {
       expect(getSelectedRangeLast().to.col).toBe(9);
     });
 
-    it('should paste data without scrolling the viewport', async() => {
+    it.forTheme('classic')('should paste data without scrolling the viewport', async() => {
       handsontable({
         data: createSpreadsheetData(50, 50),
         width: 200,
         height: 200,
+      });
+
+      selectCell(6, 2);
+      triggerPaste([
+        'test\ttest\ttest\ttest\ttest\ttest',
+        'test\ttest\ttest\ttest\ttest\ttest',
+        'test\ttest\ttest\ttest\ttest\ttest',
+        'test\ttest\ttest\ttest\ttest\ttest',
+        'test\ttest\ttest\ttest\ttest\ttest',
+        'test\ttest\ttest\ttest\ttest\ttest',
+      ].join('\n'));
+
+      expect(topOverlay().getScrollPosition()).toBe(0);
+      expect(inlineStartOverlay().getScrollPosition()).toBe(0);
+    });
+
+    it.forTheme('main')('should paste data without scrolling the viewport', async() => {
+      handsontable({
+        data: createSpreadsheetData(50, 50),
+        width: 200,
+        height: 250,
       });
 
       selectCell(6, 2);
@@ -555,6 +576,114 @@ describe('CopyPaste', () => {
 
       expect(onErrorSpy).not.toHaveBeenCalled();
       expect(getDataAtCell(0, 0)).toEqual(null);
+    });
+
+    it('should be possible to paste text into the outside element of the table when the `outsideClickDeselects` is disabled', () => {
+      handsontable({
+        data: createSpreadsheetData(5, 5),
+        outsideClickDeselects: false,
+      });
+
+      const testElement = $('<div id="testElement">Test</div>');
+
+      spec().$container.after(testElement);
+
+      const pasteEvent = getClipboardEvent();
+      const plugin = getPlugin('CopyPaste');
+
+      selectCell(1, 1);
+      pasteEvent.target = testElement[0]; // native paste event is triggered on the element outside the table
+      plugin.onPaste(pasteEvent); // trigger the plugin's method that is normally triggered by the native "paste" event
+
+      // the data in HoT should not be changed as the paste was triggered on the outside element
+      expect(getDataAtCell(1, 1)).toBe('B2');
+
+      testElement.remove();
+    });
+
+    it('should skip processing the event when the target element has the "data-hot-input" attribute and it\'s not an editor', () => {
+      handsontable({
+        data: createSpreadsheetData(5, 5),
+      });
+
+      const copyEvent = getClipboardEvent();
+      const plugin = getPlugin('CopyPaste');
+
+      spyOn(copyEvent, 'preventDefault');
+
+      selectCell(1, 1);
+      copyEvent.target = $('<div id="testElement" data-hot-input="true">Test</div>')[0];
+      plugin.onPaste(copyEvent); // trigger the plugin's method that is normally triggered by the native "paste" event
+
+      expect(copyEvent.preventDefault).not.toHaveBeenCalled();
+    });
+
+    it('should not skip processing the event when the target element has the "data-hot-input" attribute and it\'s an editor', () => {
+      handsontable({
+        data: createSpreadsheetData(5, 5),
+      });
+
+      const copyEvent = getClipboardEvent();
+      const plugin = getPlugin('CopyPaste');
+
+      spyOn(copyEvent, 'preventDefault');
+
+      selectCell(1, 1);
+      copyEvent.target = getActiveEditor().TEXTAREA;
+      plugin.onPaste(copyEvent); // trigger the plugin's method that is normally triggered by the native "paste" event
+
+      expect(copyEvent.preventDefault).toHaveBeenCalled();
+    });
+
+    it('should skip processing the event when the target element has not the "data-hot-input" attribute and it\'s not a BODY element', () => {
+      handsontable({
+        data: createSpreadsheetData(5, 5),
+      });
+
+      const copyEvent = getClipboardEvent();
+      const plugin = getPlugin('CopyPaste');
+
+      spyOn(copyEvent, 'preventDefault');
+
+      selectCell(1, 1);
+      copyEvent.target = $('<div id="testElement">Test</div>')[0];
+      plugin.onPaste(copyEvent); // trigger the plugin's method that is normally triggered by the native "paste" event
+
+      expect(copyEvent.preventDefault).not.toHaveBeenCalled();
+    });
+
+    it('should not skip processing the event when the target element has not the "data-hot-input" attribute and it\'s a BODY element', () => {
+      handsontable({
+        data: createSpreadsheetData(5, 5),
+      });
+
+      const copyEvent = getClipboardEvent();
+      const plugin = getPlugin('CopyPaste');
+
+      spyOn(copyEvent, 'preventDefault');
+
+      selectCell(1, 1);
+      copyEvent.target = document.body;
+      plugin.onPaste(copyEvent); // trigger the plugin's method that is normally triggered by the native "paste" event
+
+      expect(copyEvent.preventDefault).toHaveBeenCalled();
+    });
+
+    it('should not skip processing the event when the target element has not the "data-hot-input" attribute and it\'s a TD element (#dev-2225)', () => {
+      handsontable({
+        data: createSpreadsheetData(5, 5),
+      });
+
+      const copyEvent = getClipboardEvent();
+      const plugin = getPlugin('CopyPaste');
+
+      spyOn(copyEvent, 'preventDefault');
+
+      selectCell(1, 1);
+      copyEvent.target = getCell(1, 1);
+      plugin.onPaste(copyEvent); // trigger the plugin's method that is normally triggered by the native "paste" event
+
+      expect(copyEvent.preventDefault).toHaveBeenCalled();
     });
   });
 });

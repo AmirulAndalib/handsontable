@@ -1,8 +1,10 @@
 import Handsontable from 'handsontable';
-import 'handsontable/dist/handsontable.full.min.css';
+import 'handsontable/styles/handsontable.css';
+import 'handsontable/styles/ht-theme-main.css';
 
 const container = document.querySelector('#example6');
-const hot = new Handsontable(container, {
+
+new Handsontable(container, {
   licenseKey: 'non-commercial-and-evaluation',
   data: [
     ['A1', 'B1', 'C1', 'D1', 'E1'],
@@ -26,7 +28,7 @@ const hot = new Handsontable(container, {
     rows: [3, 5, 9],
     indicators: true,
     // exclude hidden rows from copying and pasting
-    copyPasteEnabled: false
+    copyPasteEnabled: false,
   },
   autoWrapRow: true,
   autoWrapCol: true,

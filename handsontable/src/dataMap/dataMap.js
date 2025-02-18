@@ -751,19 +751,22 @@ class DataMap {
     dataRow = isNaN(modifiedRowData) ? modifiedRowData : dataRow;
     //
 
+    const { dataDotNotation } = this.hot.getSettings();
     let value = null;
 
     // try to get value under property `prop` (includes dot)
     if (dataRow && dataRow.hasOwnProperty && hasOwnProperty(dataRow, prop)) {
       value = dataRow[prop];
 
-    } else if (typeof prop === 'string' && prop.indexOf('.') > -1) {
-      const sliced = prop.split('.');
+    } else if (dataDotNotation && typeof prop === 'string' && prop.indexOf('.') > -1) {
       let out = dataRow;
 
       if (!out) {
         return null;
       }
+
+      const sliced = prop.split('.');
+
       for (let i = 0, ilen = sliced.length; i < ilen; i++) {
         out = out[sliced[i]];
 
@@ -771,6 +774,7 @@ class DataMap {
           return null;
         }
       }
+
       value = out;
 
     } else if (typeof prop === 'function') {
@@ -832,28 +836,41 @@ class DataMap {
       }
     }
 
+    const { dataDotNotation } = this.hot.getSettings();
+
     // try to set value under property `prop` (includes dot)
     if (dataRow && dataRow.hasOwnProperty && hasOwnProperty(dataRow, prop)) {
       dataRow[prop] = newValue;
 
-    } else if (typeof prop === 'string' && prop.indexOf('.') > -1) {
-      const sliced = prop.split('.');
+    } else if (dataDotNotation && typeof prop === 'string' && prop.indexOf('.') > -1) {
       let out = dataRow;
       let i = 0;
       let ilen;
 
+      const sliced = prop.split('.');
+
       for (i = 0, ilen = sliced.length - 1; i < ilen; i++) {
+        if (sliced[i] === '__proto__' || sliced[i] === 'constructor' || sliced[i] === 'prototype') {
+          // Security: prototype-polluting is not allowed
+          return;
+        }
+
         if (typeof out[sliced[i]] === 'undefined') {
           out[sliced[i]] = {};
         }
         out = out[sliced[i]];
       }
-      out[sliced[i]] = newValue;
 
+      out[sliced[i]] = newValue;
     } else if (typeof prop === 'function') {
       prop(this.dataSource.slice(physicalRow, physicalRow + 1)[0], newValue);
 
     } else {
+      if (prop === '__proto__' || prop === 'constructor' || prop === 'prototype') {
+        // Security: prototype-polluting is not allowed
+        return;
+      }
+
       dataRow[prop] = newValue;
     }
   }

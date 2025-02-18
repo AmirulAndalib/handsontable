@@ -5,7 +5,11 @@ metaTitle: Custom cell renderer - Vue 2 Data Grid | Handsontable
 description: Create a custom cell renderer, and use it in your Vue 2 data grid by declaring it as a function.
 permalink: /vue-custom-renderer-example
 canonicalUrl: /vue-custom-renderer-example
+react:
+  id: rv0aqgfe
+  metaTitle: Custom cell renderer - Vue 2 Data Grid | Handsontable
 searchCategory: Guides
+category: Integrate with Vue 2
 ---
 
 # Custom renderer in Vue 2
@@ -33,7 +37,11 @@ The following example is an implementation of `@handsontable/vue` with a custom 
 
 ### Related guides
 
+<div class="boxes-list gray">
+
 - [Cell renderer](@/guides/cell-functions/cell-renderer/cell-renderer.md)
+
+</div>
 
 ### Related API reference
 

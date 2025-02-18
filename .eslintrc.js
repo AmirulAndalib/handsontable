@@ -2,6 +2,9 @@ module.exports = {
   extends: ['airbnb-base'],
   parser: '@babel/eslint-parser',
   parserOptions: {
+    ecmaFeatures: {
+      jsx: true
+    },
     babelOptions: {
       plugins: [
         '@babel/plugin-syntax-import-assertions',
@@ -29,6 +32,7 @@ module.exports = {
     'class-methods-use-this': 'off',
     'comma-dangle': 'off',
     'consistent-return': 'off',
+    curly: ['error', 'all'],
     'func-names': 'off',
     'import/no-extraneous-dependencies': 'off',
     'import/prefer-default-export': 'off',

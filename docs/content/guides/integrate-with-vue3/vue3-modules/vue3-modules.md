@@ -5,7 +5,11 @@ metaTitle: Modules - Vue 3 Data Grid | Handsontable
 description: Reduce the size of your Vue 3 app by importing only the modules that you need and use.
 permalink: /vue3-modules
 canonicalUrl: /vue3-modules
+react:
+  id: q4l7029o
+  metaTitle: Modules - Vue 3 Data Grid | Handsontable
 searchCategory: Guides
+category: Integrate with Vue 3
 ---
 
 # Modules in Vue 3
@@ -90,5 +94,9 @@ createApp(App).use(router).mount('#app');
 
 ## Related guides
 
+<div class="boxes-list gray">
+
 - [Modules](@/guides/tools-and-building/modules/modules.md)
 - [Bundle size](@/guides/optimization/bundle-size/bundle-size.md)
+
+</div>

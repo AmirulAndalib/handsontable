@@ -1,6 +1,7 @@
-import { HotTable } from '@handsontable/react';
+import { HotTable } from '@handsontable/react-wrapper';
 import { registerAllModules } from 'handsontable/registry';
-import 'handsontable/dist/handsontable.full.min.css';
+import 'handsontable/styles/handsontable.css';
+import 'handsontable/styles/ht-theme-main.css';
 
 // register Handsontable's modules
 registerAllModules();
@@ -25,7 +26,8 @@ const ExampleComponent = () => {
       rowHeaders={true}
       colHeaders={true}
       readOnly={false}
-      cell={[{
+      cell={[
+        {
           // bottom-level cell options overwrite the top-level grid options
           // apply only to a cell with coordinates (0, 0)
           row: 0,
@@ -38,8 +40,8 @@ const ExampleComponent = () => {
           row: 1,
           col: 1,
           readOnly: true,
-        }]
-      }
+        },
+      ]}
     />
   );
 };

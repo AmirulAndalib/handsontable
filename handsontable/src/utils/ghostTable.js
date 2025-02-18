@@ -1,4 +1,4 @@
-import { addClass, outerHeight } from './../helpers/dom/element';
+import { addClass } from './../helpers/dom/element';
 import { arrayEach } from './../helpers/array';
 
 /**
@@ -132,7 +132,7 @@ class GhostTable {
     if (this.getSetting('useHeaders') && this.hot.getColHeader(column) !== null) {
       // Please keep in mind that the renderable column index equal to the visual columns index for the GhostTable.
       // We render all columns.
-      this.hot.view.appendColHeader(column, this.table.th);
+      this.hot.view.appendColHeader(column, this.table.th, undefined, -1);
     }
     this.table.tBody.appendChild(this.createCol(column));
     this.container.container.appendChild(this.table.fragment);
@@ -149,9 +149,14 @@ class GhostTable {
     if (!this.injected) {
       this.injectTable();
     }
+
     arrayEach(this.rows, (row) => {
-      // -1 <- reduce border-top from table
-      callback(row.row, outerHeight(row.table) - 1);
+      // In cases when the cell's content produces the height with a decimal point, the height
+      // needs to be rounded up to make sure that there will be a space for the cell's content.
+      // The `.offsetHeight` always returns the rounded number (floored), so it's not suitable for this case.
+      const { height } = row.table.getBoundingClientRect();
+
+      callback(row.row, Math.ceil(height));
     });
   }
 
@@ -165,14 +170,9 @@ class GhostTable {
       this.injectTable();
     }
     arrayEach(this.columns, (column) => {
-      // The GhostTable class is responsible for calculating the columns' width based on the
-      // contents rendered in the cells. In some cases, when the column's width calculated by
-      // the browser is a decimal point with a fractional component. For example, 35.32px.
-      // The usage of the `.offsetWidth` (or our helper `outerWidth`) is incorrect.
-      // The `outerWidth` in the mentioned example (35.32px) would return 35 pixels that
-      // would cause the text to not fit in the cell, thus increasing the row height.
-      // That's why the `getBoundingClientRect` method is used. The method returns the number
-      // that is rounded up to make sure that there will be a space for the cell's content.
+      // In cases when the cell's content produces the width with a decimal point, the width
+      // needs to be rounded up to make sure that there will be a space for the cell's content.
+      // The `.offsetWidth` always returns the rounded number (floored), so it's not suitable for this case.
       const { width } = column.table.getBoundingClientRect();
 
       callback(column.col, Math.ceil(width));
@@ -269,10 +269,6 @@ class GhostTable {
       arrayEach(sample.strings, (string) => {
         const column = string.col;
         const cellProperties = this.hot.getCellMeta(row, column);
-
-        cellProperties.col = column;
-        cellProperties.row = row;
-
         const renderer = this.hot.getCellRenderer(cellProperties);
         const td = rootDocument.createElement('td');
 
@@ -337,10 +333,6 @@ class GhostTable {
       arrayEach(sample.strings, (string) => {
         const row = string.row;
         const cellProperties = this.hot.getCellMeta(row, column);
-
-        cellProperties.col = column;
-        cellProperties.row = row;
-
         const renderer = this.hot.getCellRenderer(cellProperties);
         const td = rootDocument.createElement('td');
         const tr = rootDocument.createElement('tr');

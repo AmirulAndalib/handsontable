@@ -1,13 +1,13 @@
 import {
   addClass,
+  removeClass,
   closest,
   isChildOf,
   hasClass,
-  outerWidth,
-  outerHeight
+  outerHeight,
 } from '../../helpers/dom/element';
 import { stopImmediatePropagation } from '../../helpers/dom/event';
-import { deepClone, deepExtend, isObject } from '../../helpers/object';
+import { deepClone, deepExtend } from '../../helpers/object';
 import { BasePlugin } from '../base';
 import CommentEditor from './commentEditor';
 import DisplaySwitch from './displaySwitch';
@@ -15,8 +15,6 @@ import { SEPARATOR } from '../contextMenu/predefinedItems';
 import addEditCommentItem from './contextMenuItem/addEditComment';
 import removeCommentItem from './contextMenuItem/removeComment';
 import readOnlyCommentItem from './contextMenuItem/readOnlyComment';
-
-import './comments.scss';
 
 export const PLUGIN_KEY = 'comments';
 export const PLUGIN_PRIORITY = 60;
@@ -126,6 +124,12 @@ export class Comments extends BasePlugin {
     return PLUGIN_PRIORITY;
   }
 
+  static get DEFAULT_SETTINGS() {
+    return {
+      displayDelay: 250,
+    };
+  }
+
   /**
    * Current cell range, an object with `from` property, with `row` and `col` properties (e.q. `{from: {row: 1, col: 6}}`).
    *
@@ -162,13 +166,6 @@ export class Comments extends BasePlugin {
    */
   #preventEditorHiding = false;
   /**
-   * The property for holding editor dimensions for further processing.
-   *
-   * @private
-   * @type {object}
-   */
-  #tempEditorDimensions = {};
-  /**
    * The flag that allows processing mousedown event correctly when comments editor is triggered.
    *
    * @private
@@ -203,10 +200,11 @@ export class Comments extends BasePlugin {
 
     if (!this.#editor) {
       this.#editor = new CommentEditor(this.hot.rootDocument, this.hot.isRtl());
+      this.#editor.addLocalHook('resize', (...args) => this.#onEditorResize(...args));
     }
 
     if (!this.#displaySwitch) {
-      this.#displaySwitch = new DisplaySwitch(this.getDisplayDelaySetting());
+      this.#displaySwitch = new DisplaySwitch(this.getSetting('displayDelay'));
     }
 
     this.addHook('afterContextMenuDefaultOptions', options => this.addToContextMenu(options));
@@ -215,6 +213,7 @@ export class Comments extends BasePlugin {
     this.addHook('afterScroll', () => this.#onAfterScroll());
     this.addHook('afterBeginEditing', () => this.hide());
     this.addHook('afterDocumentKeyDown', event => this.#onAfterDocumentKeyDown(event));
+    this.addHook('afterSetTheme', (...args) => this.#updateEditorThemeClassName(...args));
 
     this.#displaySwitch.addLocalHook('hide', () => this.hide());
     this.#displaySwitch.addLocalHook('show', (row, col) => this.showAtCell(row, col));
@@ -231,7 +230,7 @@ export class Comments extends BasePlugin {
    *   - [`comments`](@/api/options.md#comments)
    */
   updatePlugin() {
-    this.#displaySwitch.updateDelay(this.getDisplayDelaySetting());
+    this.#displaySwitch.updateDelay(this.getSetting('displayDelay'));
     super.updatePlugin();
   }
 
@@ -271,7 +270,7 @@ export class Comments extends BasePlugin {
         });
       },
       stopPropagation: true,
-      runOnlyIf: () => this.hot.getSelectedRangeLast()?.highlight.isCell() && !this.#editor.isVisible(),
+      runOnlyIf: () => this.hot.getSelectedRangeLast()?.highlight.isCell(),
       group: SHORTCUTS_GROUP,
     });
 
@@ -282,7 +281,7 @@ export class Comments extends BasePlugin {
         this.hide();
         manager.setActiveContextName('grid');
       },
-      runOnlyIf: () => this.hot.getSelectedRangeLast()?.highlight.isCell() && this.#editor.isVisible(),
+      runOnlyIf: () => this.#editor.isVisible() && this.#editor.isFocused(),
       group: SHORTCUTS_GROUP,
     });
 
@@ -292,7 +291,18 @@ export class Comments extends BasePlugin {
         this.hide();
         manager.setActiveContextName('grid');
       },
-      runOnlyIf: () => this.hot.getSelectedRangeLast()?.highlight.isCell() && this.#editor.isVisible(),
+      runOnlyIf: () => this.#editor.isVisible() && this.#editor.isFocused(),
+      group: SHORTCUTS_GROUP,
+    });
+
+    pluginContext.addShortcut({
+      keys: [['Shift', 'Tab'], ['Tab']],
+      forwardToContext: manager.getContext('grid'),
+      callback: () => {
+        this.#editor.setValue(this.#editor.getValue());
+        this.hide();
+        manager.setActiveContextName('grid');
+      },
       group: SHORTCUTS_GROUP,
     });
   }
@@ -322,8 +332,12 @@ export class Comments extends BasePlugin {
     this.eventManager.addEventListener(rootDocument, 'mouseup', () => this.#onMouseUp());
     this.eventManager.addEventListener(editorElement, 'focus', () => this.#onEditorFocus());
     this.eventManager.addEventListener(editorElement, 'blur', () => this.#onEditorBlur());
-    this.eventManager.addEventListener(editorElement, 'mousedown', event => this.#onEditorMouseDown(event));
-    this.eventManager.addEventListener(editorElement, 'mouseup', event => this.#onEditorMouseUp(event));
+
+    this.eventManager.addEventListener(
+      this.getEditorInputElement(),
+      'mousedown',
+      event => this.#onInputElementMouseDown(event)
+    );
   }
 
   /**
@@ -561,7 +575,7 @@ export class Comments extends BasePlugin {
       this.#editor.resetSize();
     }
 
-    const lastColWidth = isBeforeRenderedColumns ? 0 : wtTable.getStretchedColumnWidth(renderableColumn);
+    const lastColWidth = isBeforeRenderedColumns ? 0 : wtTable.getColumnWidth(renderableColumn);
     const lastRowHeight = targetingPreviousRow && !isBeforeRenderedRows ? outerHeight(TD) : 0;
 
     const {
@@ -598,6 +612,7 @@ export class Comments extends BasePlugin {
 
     this.#editor.setPosition(x, y);
     this.#editor.setReadOnlyState(this.getCommentMeta(visualRow, visualColumn, META_READONLY));
+    this.#editor.observeSize();
   }
 
   /**
@@ -672,6 +687,15 @@ export class Comments extends BasePlugin {
   }
 
   /**
+   * Prevent recognizing clicking on the comment editor as clicking outside of table.
+   *
+   * @param {MouseEvent} event The `mousedown` event.
+   */
+  #onInputElementMouseDown(event) {
+    event.stopPropagation();
+  }
+
+  /**
    * `mouseover` event callback.
    *
    * @param {MouseEvent} event The `mouseover` event.
@@ -736,35 +760,15 @@ export class Comments extends BasePlugin {
   }
 
   /**
-   * `mousedown` hook. Along with `onEditorMouseUp` used to simulate the textarea resizing event.
+   * Saves the comments editor size to the cell meta.
    *
-   * @param {MouseEvent} event The `mousedown` event.
+   * @param {number} width The new width of the editor.
+   * @param {number} height The new height of the editor.
    */
-  #onEditorMouseDown(event) {
-    this.#tempEditorDimensions = {
-      width: outerWidth(event.target),
-      height: outerHeight(event.target)
-    };
-  }
-
-  /**
-   * `mouseup` hook. Along with `onEditorMouseDown` used to simulate the textarea resizing event.
-   *
-   * @param {MouseEvent} event The `mouseup` event.
-   */
-  #onEditorMouseUp(event) {
-    const currentWidth = outerWidth(event.target);
-    const currentHeight = outerHeight(event.target);
-
-    if (currentWidth !== this.#tempEditorDimensions.width + 1 ||
-        currentHeight !== this.#tempEditorDimensions.height + 2) {
-      this.updateCommentMeta(this.range.from.row, this.range.from.col, {
-        [META_STYLE]: {
-          width: currentWidth,
-          height: currentHeight
-        }
-      });
-    }
+  #onEditorResize(width, height) {
+    this.updateCommentMeta(this.range.from.row, this.range.from.col, {
+      [META_STYLE]: { width, height }
+    });
   }
 
   /**
@@ -774,7 +778,7 @@ export class Comments extends BasePlugin {
    * @param {Event} event The keydown event.
    */
   #onAfterDocumentKeyDown(event) {
-    if (this.#editor.isVisible()) {
+    if (this.#editor.isFocused()) {
       stopImmediatePropagation(event);
     }
   }
@@ -786,6 +790,16 @@ export class Comments extends BasePlugin {
     if (!this.#preventEditorHiding) {
       this.hide();
     }
+  }
+
+  /**
+   * Updates the editor theme class name.
+   */
+  #updateEditorThemeClassName() {
+    const editorElement = this.#editor.getEditorElement();
+
+    removeClass(editorElement, /ht-theme-.*/g);
+    addClass(editorElement, this.hot.getCurrentThemeName());
   }
 
   /**
@@ -804,20 +818,6 @@ export class Comments extends BasePlugin {
   }
 
   /**
-   * Get `displayDelay` setting of comment plugin.
-   *
-   * @private
-   * @returns {number|undefined}
-   */
-  getDisplayDelaySetting() {
-    const commentSetting = this.hot.getSettings()[PLUGIN_KEY];
-
-    if (isObject(commentSetting)) {
-      return commentSetting.displayDelay;
-    }
-  }
-
-  /**
    * Gets the editors input element.
    *
    * @private
@@ -831,13 +831,8 @@ export class Comments extends BasePlugin {
    * Destroys the plugin instance.
    */
   destroy() {
-    if (this.#editor) {
-      this.#editor.destroy();
-    }
-
-    if (this.#displaySwitch) {
-      this.#displaySwitch.destroy();
-    }
+    this.#editor?.destroy();
+    this.#displaySwitch?.destroy();
 
     super.destroy();
   }

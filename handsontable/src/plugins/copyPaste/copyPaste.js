@@ -1,5 +1,5 @@
 import { BasePlugin } from '../base';
-import Hooks from '../../pluginHooks';
+import { Hooks } from '../../core/hooks';
 import { stringify, parse } from '../../3rdparty/SheetClip';
 import { arrayEach } from '../../helpers/array';
 import { sanitize } from '../../helpers/string';
@@ -20,8 +20,6 @@ import {
   normalizeRanges,
 } from './copyableRanges';
 import { _dataToHTML, htmlToGridSettings } from '../../utils/parseTable';
-
-import './copyPaste.css';
 
 Hooks.getSingleton().register('afterCopyLimit');
 Hooks.getSingleton().register('modifyCopyableRange');
@@ -89,6 +87,17 @@ export class CopyPaste extends BasePlugin {
 
   static get PLUGIN_PRIORITY() {
     return PLUGIN_PRIORITY;
+  }
+
+  static get DEFAULT_SETTINGS() {
+    return {
+      pasteMode: 'overwrite',
+      rowsLimit: Infinity,
+      columnsLimit: Infinity,
+      copyColumnHeaders: false,
+      copyColumnGroupHeaders: false,
+      copyColumnHeadersOnly: false,
+    };
   }
 
   /**
@@ -213,17 +222,14 @@ export class CopyPaste extends BasePlugin {
     if (this.enabled) {
       return;
     }
-    const { [PLUGIN_KEY]: settings } = this.hot.getSettings();
 
-    if (typeof settings === 'object') {
-      this.pasteMode = settings.pasteMode ?? this.pasteMode;
-      this.rowsLimit = isNaN(settings.rowsLimit) ? this.rowsLimit : settings.rowsLimit;
-      this.columnsLimit = isNaN(settings.columnsLimit) ? this.columnsLimit : settings.columnsLimit;
-      this.#enableCopyColumnHeaders = !!settings.copyColumnHeaders;
-      this.#enableCopyColumnGroupHeaders = !!settings.copyColumnGroupHeaders;
-      this.#enableCopyColumnHeadersOnly = !!settings.copyColumnHeadersOnly;
-      this.uiContainer = settings.uiContainer ?? this.uiContainer;
-    }
+    this.pasteMode = this.getSetting('pasteMode') ?? this.pasteMode;
+    this.rowsLimit = isNaN(this.getSetting('rowsLimit')) ? this.rowsLimit : this.getSetting('rowsLimit');
+    this.columnsLimit = isNaN(this.getSetting('columnsLimit')) ? this.columnsLimit : this.getSetting('columnsLimit');
+    this.#enableCopyColumnHeaders = this.getSetting('copyColumnHeaders');
+    this.#enableCopyColumnGroupHeaders = this.getSetting('copyColumnGroupHeaders');
+    this.#enableCopyColumnHeadersOnly = this.getSetting('copyColumnHeadersOnly');
+    this.uiContainer = this.getSetting('uiContainer') ?? this.uiContainer;
 
     this.addHook('afterContextMenuDefaultOptions', options => this.#onAfterContextMenuDefaultOptions(options));
     this.addHook('afterSelection', (...args) => this.#onAfterSelection(...args));
@@ -618,10 +624,23 @@ export class CopyPaste extends BasePlugin {
    * @private
    */
   onCopy(event) {
-    if ((!this.hot.isListening() && !this.#isTriggeredByCopy) || this.isEditorOpened()) {
+    const focusedElement = this.hot.getFocusManager().getRefocusElement();
+    const isHotInput = event.target?.hasAttribute('data-hot-input');
+    const selectedCell = this.hot.getSelectedRangeLast()?.highlight;
+    const TD = selectedCell ? this.hot.getCell(selectedCell.row, selectedCell.col, true) : null;
+
+    if (
+      !this.hot.isListening() && !this.#isTriggeredByCopy ||
+      this.isEditorOpened() ||
+      event.target instanceof HTMLElement && (
+        isHotInput && event.target !== focusedElement ||
+        !isHotInput && event.target !== this.hot.rootDocument.body && TD !== event.target
+      )
+    ) {
       return;
     }
 
+    event.preventDefault();
     this.setCopyableText();
     this.#isTriggeredByCopy = false;
 
@@ -646,7 +665,6 @@ export class CopyPaste extends BasePlugin {
     }
 
     this.#copyMode = 'cells-only';
-    event.preventDefault();
   }
 
   /**
@@ -656,10 +674,23 @@ export class CopyPaste extends BasePlugin {
    * @private
    */
   onCut(event) {
-    if ((!this.hot.isListening() && !this.#isTriggeredByCut) || this.isEditorOpened()) {
+    const focusedElement = this.hot.getFocusManager().getRefocusElement();
+    const isHotInput = event.target?.hasAttribute('data-hot-input');
+    const selectedCell = this.hot.getSelectedRangeLast()?.highlight;
+    const TD = selectedCell ? this.hot.getCell(selectedCell.row, selectedCell.col, true) : null;
+
+    if (
+      !this.hot.isListening() && !this.#isTriggeredByCut ||
+      this.isEditorOpened() ||
+      event.target instanceof HTMLElement && (
+        isHotInput && event.target !== focusedElement ||
+        !isHotInput && event.target !== this.hot.rootDocument.body && TD !== event.target
+      )
+    ) {
       return;
     }
 
+    event.preventDefault();
     this.setCopyableText();
     this.#isTriggeredByCut = false;
 
@@ -682,8 +713,6 @@ export class CopyPaste extends BasePlugin {
       this.hot.emptySelectedCells('CopyPaste.cut');
       this.hot.runHooks('afterCut', rangedData, this.copyableRanges);
     }
-
-    event.preventDefault();
   }
 
   /**
@@ -693,13 +722,24 @@ export class CopyPaste extends BasePlugin {
    * @private
    */
   onPaste(event) {
-    if (!this.hot.isListening() || this.isEditorOpened() || !this.hot.getSelected()) {
+    const focusedElement = this.hot.getFocusManager().getRefocusElement();
+    const isHotInput = event.target?.hasAttribute('data-hot-input');
+    const selectedCell = this.hot.getSelectedRangeLast()?.highlight;
+    const TD = selectedCell ? this.hot.getCell(selectedCell.row, selectedCell.col, true) : null;
+
+    if (
+      !this.hot.isListening() ||
+      this.isEditorOpened() ||
+      !this.hot.getSelected() ||
+      event.target instanceof HTMLElement && (
+        isHotInput && event.target !== focusedElement ||
+        !isHotInput && event.target !== this.hot.rootDocument.body && TD !== event.target
+      )
+    ) {
       return;
     }
 
-    if (event && event.preventDefault) {
-      event.preventDefault();
-    }
+    event.preventDefault();
 
     let pastedData;
 

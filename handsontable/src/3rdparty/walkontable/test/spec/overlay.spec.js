@@ -728,8 +728,8 @@ describe('WalkontableOverlay', () => {
     const baseRect = getTableRect(wt.wtTable);
 
     expect(baseRect).toEqual(jasmine.objectContaining({
-      top: documentClientHeight - totalRowsHeight,
-      bottom: documentClientHeight + 1, // +1 innerBorderTop
+      top: documentClientHeight - totalRowsHeight - 1, // 1px header border compensation
+      bottom: documentClientHeight,
       left: documentClientWidth - totalColumnsWidth,
     }));
     expect(getTableRect(wt.wtOverlays.topOverlay.clone.wtTable)).toEqual(jasmine.objectContaining({
@@ -743,8 +743,8 @@ describe('WalkontableOverlay', () => {
       left: 0,
     }));
     expect(getTableRect(wt.wtOverlays.inlineStartOverlay.clone.wtTable)).toEqual(jasmine.objectContaining({
-      top: documentClientHeight - totalRowsHeight,
-      bottom: documentClientHeight + 1, // +1 innerBorderTop
+      top: documentClientHeight - totalRowsHeight - 1, // 1px header border compensation
+      bottom: documentClientHeight,
       left: 0,
     }));
   });
@@ -775,7 +775,7 @@ describe('WalkontableOverlay', () => {
       });
 
       wt.draw();
-      wt.scrollViewport({ row: getTotalRows() - 1, col: 0 }, true, false, false, true);
+      wt.scrollViewport({ row: getTotalRows() - 1, col: 0 }, 'start', 'top');
       wt.draw();
 
       // scroll the viewport precisely 1px before the top overlay disappears
@@ -799,7 +799,7 @@ describe('WalkontableOverlay', () => {
       });
 
       wt.draw();
-      wt.scrollViewport({ row: 0, col: getTotalColumns() - 1 }, true, false, false, true);
+      wt.scrollViewport({ row: 0, col: getTotalColumns() - 1 }, 'start', 'top');
       wt.draw();
 
       // scroll the viewport precisely 1px before the left overlay disappears
@@ -822,7 +822,7 @@ describe('WalkontableOverlay', () => {
       });
 
       wt.draw();
-      wt.scrollViewport({ row: getTotalRows() - 1, col: 0 }, false, true, true, false);
+      wt.scrollViewport({ row: getTotalRows() - 1, col: 0 }, 'end', 'bottom');
       wt.draw();
 
       // scroll the viewport precisely 1px before the bottom overlay disappears
@@ -929,5 +929,63 @@ describe('WalkontableOverlay', () => {
       wtOverlaysRef.bottomInlineStartCornerOverlay,
       wtOverlaysRef.wtTable
     ]);
+  });
+
+  it('should attach the `wheel` event to each overlay even if they are disabled (#dev-512)', () => {
+    const wt = walkontable({
+      data: getData,
+      totalRows: getTotalRows,
+      totalColumns: getTotalColumns,
+      fixedColumnsStart: 0,
+      fixedRowsTop: 0,
+      fixedRowsBottom: 0,
+    });
+
+    wt.draw();
+
+    inlineStartOverlay().clone.wtTable.holder
+      .dispatchEvent(new WheelEvent('wheel', {
+        deltaX: 50,
+        deltaY: 60,
+      }));
+
+    expect(inlineStartOverlay().getScrollPosition()).toBe(50);
+    expect(topOverlay().getScrollPosition()).toBe(60);
+
+    topInlineStartCornerOverlay().clone.wtTable.holder
+      .dispatchEvent(new WheelEvent('wheel', {
+        deltaX: 50,
+        deltaY: 60,
+      }));
+
+    expect(inlineStartOverlay().getScrollPosition()).toBe(100);
+    expect(topOverlay().getScrollPosition()).toBe(120);
+
+    topOverlay().clone.wtTable.holder
+      .dispatchEvent(new WheelEvent('wheel', {
+        deltaX: 50,
+        deltaY: 60,
+      }));
+
+    expect(inlineStartOverlay().getScrollPosition()).toBe(150);
+    expect(topOverlay().getScrollPosition()).toBe(180);
+
+    bottomInlineStartCornerOverlay().clone.wtTable.holder
+      .dispatchEvent(new WheelEvent('wheel', {
+        deltaX: 50,
+        deltaY: 60,
+      }));
+
+    expect(inlineStartOverlay().getScrollPosition()).toBe(200);
+    expect(topOverlay().getScrollPosition()).toBe(240);
+
+    bottomOverlay().clone.wtTable.holder
+      .dispatchEvent(new WheelEvent('wheel', {
+        deltaX: 50,
+        deltaY: 60,
+      }));
+
+    expect(inlineStartOverlay().getScrollPosition()).toBe(250);
+    expect(topOverlay().getScrollPosition()).toBe(300);
   });
 });

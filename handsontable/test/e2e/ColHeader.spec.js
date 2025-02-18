@@ -32,7 +32,11 @@ describe('ColHeader', () => {
       height: 'auto',
     });
 
-    expect(spec().$container.find('.handsontable.ht_clone_top').height()).toEqual(26); // THs are 25px height and have 1px border on top
+    expect(spec().$container.find('.handsontable.ht_clone_top').height())
+      .forThemes(({ classic, main }) => {
+        classic.toEqual(26); // THs are 25px height and have 1px border on top
+        main.toEqual(29);
+      });
   });
 
   it('should properly calculate colHeaders\' overlay width', () => {
@@ -150,7 +154,7 @@ describe('ColHeader', () => {
     let headers = getHtCore().find('thead th').length;
 
     expect(headers).toBeGreaterThan(0);
-    expect(getTopClone().find('thead th').length).toEqual(headers);
+    expect(getTopClone().find('thead th').length).toBe(headers);
 
     hot.updateSettings({
       colHeaders: false
@@ -158,8 +162,8 @@ describe('ColHeader', () => {
 
     headers = getHtCore().find('thead th').length;
 
-    expect(headers).toEqual(0);
-    expect(getTopClone().width()).toEqual(0);
+    expect(headers).toBe(0);
+    expect(getTopClone().width()).toBe(0);
   });
 
   it('should show/hide columns headers after updateSettings', () => {
@@ -388,7 +392,10 @@ describe('ColHeader', () => {
 
     hot.render();
 
-    expect(spec().$container.find('th').eq(0).height()).toEqual(40);
+    expect(spec().$container.find('th').eq(0).height()).forThemes(({ classic, main }) => {
+      classic.toEqual(40);
+      main.toEqual(39);
+    });
   });
 
   it('should allow defining custom column header heights using the columnHeaderHeight config option, when multiple column header levels are defined', () => {
@@ -418,7 +425,12 @@ describe('ColHeader', () => {
 
     hot.render();
 
-    expect(spec().$container.find('.handsontable.ht_clone_top tr:nth-child(1) th:nth-child(1)').height()).toEqual(45);
+    expect(spec().$container.find('.handsontable.ht_clone_top tr:nth-child(1) th:nth-child(1)').height())
+      .forThemes(({ classic, main }) => {
+        classic.toEqual(45);
+        main.toEqual(43);
+      });
+
     expect(spec().$container.find('.handsontable.ht_clone_top tr:nth-child(2) th:nth-child(1)').height()).toEqual(65);
   });
 

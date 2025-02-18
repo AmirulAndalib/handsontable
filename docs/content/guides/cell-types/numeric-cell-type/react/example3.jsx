@@ -1,13 +1,13 @@
-import { HotTable, HotColumn } from '@handsontable/react';
+import { HotTable, HotColumn } from '@handsontable/react-wrapper';
 import { registerAllModules } from 'handsontable/registry';
 import numbro from 'numbro';
 import jaJP from 'numbro/languages/ja-JP';
 import trTR from 'numbro/languages/tr-TR';
-import 'handsontable/dist/handsontable.full.min.css';
+import 'handsontable/styles/handsontable.css';
+import 'handsontable/styles/ht-theme-main.css';
 
 // register Handsontable's modules
 registerAllModules();
-
 // register the languages you need
 numbro.registerLanguage(jaJP);
 numbro.registerLanguage(trTR);
@@ -39,8 +39,8 @@ const ExampleComponent = () => {
         },
         {
           productName: 'Product C',
-          JP_price: 3120.10,
-          TR_price: 435.20,
+          JP_price: 3120.1,
+          TR_price: 435.2,
         },
       ]}
       autoRowSize={false}
@@ -52,9 +52,19 @@ const ExampleComponent = () => {
       autoWrapCol={true}
       licenseKey="non-commercial-and-evaluation"
     >
-      <HotColumn data="productName" type="text" width="120" />
-      <HotColumn data="JP_price" type="numeric" numericFormat={formatJP} width="120" />
-      <HotColumn data="TR_price" type="numeric" numericFormat={formatTR} width="120" />
+      <HotColumn data="productName" type="text" width="150" />
+      <HotColumn
+        data="JP_price"
+        type="numeric"
+        numericFormat={formatJP}
+        width="150"
+      />
+      <HotColumn
+        data="TR_price"
+        type="numeric"
+        numericFormat={formatTR}
+        width="150"
+      />
     </HotTable>
   );
 };

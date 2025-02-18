@@ -25,7 +25,10 @@ describe('ContextMenu keyboard shortcut', () => {
       keyDownUp('pageup');
 
       expect(getPlugin('contextMenu').menu.getSelectedItem().name).toBe('Test item 1');
-      expect(window.scrollY).toBe(1);
+      expect(window.scrollY).forThemes(({ classic, main }) => {
+        classic.toBe(1);
+        main.toBe(10);
+      });
     });
 
     it('should move the menu item selection to the first item when the menu fits within the browser viewport' +
@@ -58,16 +61,12 @@ describe('ContextMenu keyboard shortcut', () => {
 
       keyDownUp('pageup');
 
+      const menuView = getPlugin('contextMenu').menu.hotMenu.view;
       let lastVisibleRow = 199;
 
       {
-        // create rows calculator that allows gather information about what rows are already
-        // visible in the browser viewport. The -2 argument means that the calculator takes into
-        // account rows that are partially visible.
-        const {
-          startRow,
-          endRow,
-        } = getPlugin('contextMenu').menu.hotMenu.view._wt.wtViewport.createRowsCalculator(-2);
+        const startRow = menuView.getFirstPartiallyVisibleRow();
+        const endRow = menuView.getLastPartiallyVisibleRow();
 
         expect(endRow).toBe(lastVisibleRow);
         expect(getPlugin('contextMenu').menu.getSelectedItem().name).toBe(`Test item ${startRow + 1}`);
@@ -78,10 +77,8 @@ describe('ContextMenu keyboard shortcut', () => {
       keyDownUp('pageup');
 
       {
-        const {
-          startRow,
-          endRow,
-        } = getPlugin('contextMenu').menu.hotMenu.view._wt.wtViewport.createRowsCalculator(-2);
+        const startRow = menuView.getFirstPartiallyVisibleRow();
+        const endRow = menuView.getLastPartiallyVisibleRow();
 
         expect(endRow).toBe(lastVisibleRow);
         expect(getPlugin('contextMenu').menu.getSelectedItem().name).toBe(`Test item ${startRow + 1}`);
@@ -92,10 +89,8 @@ describe('ContextMenu keyboard shortcut', () => {
       keyDownUp('pageup');
 
       {
-        const {
-          startRow,
-          endRow,
-        } = getPlugin('contextMenu').menu.hotMenu.view._wt.wtViewport.createRowsCalculator(-2);
+        const startRow = menuView.getFirstPartiallyVisibleRow();
+        const endRow = menuView.getLastPartiallyVisibleRow();
 
         expect(endRow).toBe(lastVisibleRow);
         expect(getPlugin('contextMenu').menu.getSelectedItem().name).toBe(`Test item ${startRow + 1}`);
@@ -106,10 +101,8 @@ describe('ContextMenu keyboard shortcut', () => {
       keyDownUp('pageup');
 
       {
-        const {
-          startRow,
-          endRow,
-        } = getPlugin('contextMenu').menu.hotMenu.view._wt.wtViewport.createRowsCalculator(-2);
+        const startRow = menuView.getFirstPartiallyVisibleRow();
+        const endRow = menuView.getLastPartiallyVisibleRow();
 
         expect(endRow).toBe(lastVisibleRow);
         expect(getPlugin('contextMenu').menu.getSelectedItem().name).toBe(`Test item ${startRow + 1}`);

@@ -10,8 +10,9 @@ import { isFunction } from '../../helpers/function';
 import { arrayMap } from '../../helpers/array';
 import { BasePlugin } from '../base';
 import { IndexesSequence, PhysicalIndexToValueMap as IndexToValueMap } from '../../translations';
-import Hooks from '../../pluginHooks';
+import { Hooks } from '../../core/hooks';
 import { ColumnStatesManager } from './columnStatesManager';
+import { EDITOR_EDIT_GROUP as SHORTCUTS_GROUP_EDITOR } from '../../shortcutContexts';
 import {
   HEADER_SPAN_CLASS,
   getNextSortOrder,
@@ -197,6 +198,8 @@ export class ColumnSorting extends BasePlugin {
       if (this.indexesSequenceCache !== null) {
         this.hot.rowIndexMapper.setIndexesSequence(this.indexesSequenceCache.getValues());
         this.hot.rowIndexMapper.unregisterMap(this.pluginKey);
+
+        this.indexesSequenceCache = null;
       }
     }, true);
 
@@ -222,15 +225,19 @@ export class ColumnSorting extends BasePlugin {
         callback: () => {
           const { highlight } = this.hot.getSelectedRangeLast();
 
-          if (highlight.row === -1 && highlight.col >= 0) {
-            this.sort(this.getColumnNextConfig(highlight.col));
-          }
+          this.sort(this.getColumnNextConfig(highlight.col));
+
+          // prevent default Enter behavior (move to the next row within a selection range)
+          return false;
         },
         runOnlyIf: () => {
           const highlight = this.hot.getSelectedRangeLast()?.highlight;
 
-          return highlight && this.hot.selection.isCellVisible(highlight) && highlight.isHeader();
+          return highlight && this.hot.getSelectedRangeLast()?.isSingle() &&
+            this.hot.selection.isCellVisible(highlight) && highlight.row === -1 && highlight.col >= 0;
         },
+        relativeToGroup: SHORTCUTS_GROUP_EDITOR,
+        position: 'before',
         group: SHORTCUTS_GROUP,
       });
   }
@@ -612,9 +619,9 @@ export class ColumnSorting extends BasePlugin {
    * @private
    */
   sortByPresetSortStates(sortConfigs) {
-    if (sortConfigs.length === 0) {
-      this.hot.rowIndexMapper.setIndexesSequence(this.indexesSequenceCache.getValues());
+    this.hot.rowIndexMapper.setIndexesSequence(this.indexesSequenceCache.getValues());
 
+    if (sortConfigs.length === 0) {
       return;
     }
 
@@ -833,7 +840,21 @@ export class ColumnSorting extends BasePlugin {
         this.hot.selectColumns(coords.col);
       }
 
-      this.sort(this.getColumnNextConfig(coords.col));
+      const activeEditor = this.hot.getActiveEditor();
+      const nextConfig = this.getColumnNextConfig(coords.col);
+
+      if (
+        activeEditor?.isOpened() &&
+        this.hot.getCellValidator(activeEditor.row, activeEditor.col)
+      ) {
+        // Postpone sorting until the cell's value is validated and saved.
+        this.hot.addHookOnce('postAfterValidate', () => {
+          this.sort(nextConfig);
+        });
+
+      } else {
+        this.sort(nextConfig);
+      }
     }
   }
 

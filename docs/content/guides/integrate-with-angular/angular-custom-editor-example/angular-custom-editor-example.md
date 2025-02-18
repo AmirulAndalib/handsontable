@@ -5,7 +5,11 @@ metaTitle: Custom cell editor - Angular Data Grid | Handsontable
 description: Create a custom cell editor, and use it in your Angular data grid by declaring it as a class.
 permalink: /angular-custom-editor-example
 canonicalUrl: /angular-custom-editor-example
+react:
+  id: q5mi9bqw
+  metaTitle: Custom cell editor - Angular Data Grid | Handsontable
 searchCategory: Guides
+category: Integrate with Angular
 ---
 
 # Custom editor example in Angular
@@ -21,7 +25,6 @@ The following is an implementation of the `@handsontable/angular` component with
 ::: example :angular --html 1 --js 2
 
 @[code](@/content/guides/integrate-with-angular/angular-custom-editor-example/angular/example1.html)
-
 @[code](@/content/guides/integrate-with-angular/angular-custom-editor-example/angular/example1.js)
 
 :::
@@ -30,7 +33,11 @@ The following is an implementation of the `@handsontable/angular` component with
 
 ### Related guides
 
+<div class="boxes-list gray">
+
 - [Cell editor](@/guides/cell-functions/cell-editor/cell-editor.md)
+
+</div>
 
 ### Related API reference
 

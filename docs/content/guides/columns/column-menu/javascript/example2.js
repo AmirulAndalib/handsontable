@@ -1,8 +1,10 @@
 import Handsontable from 'handsontable';
-import 'handsontable/dist/handsontable.full.min.css';
+import 'handsontable/styles/handsontable.css';
+import 'handsontable/styles/ht-theme-main.css';
 
 const container = document.querySelector('#example2');
-const hot = new Handsontable(container, {
+
+new Handsontable(container, {
   data: [
     ['A1', 'B1', 'C1', 'D1', 'E1', 'F1', 'G1'],
     ['A2', 'B2', 'C2', 'D2', 'E2', 'F2', 'G2'],
@@ -16,7 +18,7 @@ const hot = new Handsontable(container, {
     '---------',
     'make_read_only',
     '---------',
-    'alignment'
+    'alignment',
   ],
   autoWrapRow: true,
   autoWrapCol: true,

@@ -77,6 +77,8 @@ describe('Updating the Handsontable settings', () => {
   });
 
   it('should update the previously initialized Handsontable instance only once with multiple changed properties', async() => {
+    const initialAfterChangeHook = () => { /* initial hook */ };
+    const modifiedAfterChangeHook = () => { /* modified hook */ };
     const App = {
       components: { HotTable },
       template: `
@@ -85,6 +87,7 @@ describe('Updating the Handsontable settings', () => {
           :rowHeaders="rowHeaders"
           :colHeaders="colHeaders"
           :readOnly="readOnly"
+          :afterChange="afterChange"
           :afterUpdateSettings="() => { this.updateSettingsCalls ++ }"
           ></HotTable>`,
       data() {
@@ -93,6 +96,7 @@ describe('Updating the Handsontable settings', () => {
           colHeaders: true,
           readOnly: true,
           updateSettingsCalls: 0,
+          afterChange: initialAfterChangeHook,
         };
       },
       methods: {
@@ -100,6 +104,7 @@ describe('Updating the Handsontable settings', () => {
           this.rowHeaders = false;
           this.colHeaders = false;
           this.readOnly = false;
+          this.afterChange = modifiedAfterChangeHook;
         },
       },
     };
@@ -113,12 +118,19 @@ describe('Updating the Handsontable settings', () => {
     expect(hotTableComponent.hotInstance.getSettings().colHeaders).toBe(true);
     expect(hotTableComponent.hotInstance.getSettings().readOnly).toBe(true);
 
+    const hooks = hotTableComponent.hotInstance.pluginHookBucket.getHooks('afterChange');
+
+    expect(hooks.filter(hookEntry => hookEntry.callback === initialAfterChangeHook).length).toBe(1);
+    expect(hooks.filter(hookEntry => hookEntry.callback === modifiedAfterChangeHook).length).toBe(0);
+
     await testWrapper.vm.updateData();
 
     expect(testWrapper.vm.updateSettingsCalls).toBe(1);
     expect(hotTableComponent.hotInstance.getSettings().rowHeaders).toBe(false);
     expect(hotTableComponent.hotInstance.getSettings().colHeaders).toBe(false);
     expect(hotTableComponent.hotInstance.getSettings().readOnly).toBe(false);
+    expect(hooks.filter(hookEntry => hookEntry.callback === initialAfterChangeHook).length).toBe(0);
+    expect(hooks.filter(hookEntry => hookEntry.callback === modifiedAfterChangeHook).length).toBe(1);
 
     testWrapper.unmount();
   });

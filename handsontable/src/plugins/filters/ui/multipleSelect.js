@@ -1,6 +1,5 @@
 import { addClass, getScrollbarWidth } from '../../../helpers/dom/element';
 import { clone, extend } from '../../../helpers/object';
-import { arrayFilter, arrayMap, arrayEach } from '../../../helpers/array';
 import { isKey } from '../../../helpers/unicode';
 import { partial } from '../../../helpers/function';
 import { dataRowToChangesArray } from '../../../helpers/data';
@@ -107,10 +106,7 @@ export class MultipleSelectUI extends BaseUI {
    */
   setItems(items) {
     this.#items = items;
-
-    if (this.#itemsBox) {
-      this.#itemsBox.loadData(this.#items);
-    }
+    this.#itemsBox?.loadData(this.#items);
   }
 
   /**
@@ -206,11 +202,10 @@ export class MultipleSelectUI extends BaseUI {
       if (!this._element) {
         return;
       }
-      if (this.#itemsBox) {
-        this.#itemsBox.destroy();
-      }
 
+      this.#itemsBox?.destroy();
       addClass(wrapper, 'htUIMultipleSelectHot');
+
       // Constructs and initializes a new Handsontable instance
       this.#itemsBox = new this.hot.constructor(wrapper, {
         data: this.#items,
@@ -231,19 +226,25 @@ export class MultipleSelectUI extends BaseUI {
         beforeOnCellMouseUp: () => {
           this.#itemsBox.listen();
         },
+        colWidths: () => this.#itemsBox.container.scrollWidth - getScrollbarWidth(rootDocument),
         maxCols: 1,
         autoWrapCol: true,
         height: 110,
-        // Workaround for #151.
-        colWidths: () => this.#itemsBox.container.scrollWidth - getScrollbarWidth(rootDocument),
         copyPaste: false,
         disableVisualSelection: 'area',
         fillHandle: false,
         fragmentSelection: 'cell',
         tabMoves: { row: 1, col: 0 },
+        themeName: this.hot.getCurrentThemeName(),
         layoutDirection: this.hot.isRtl() ? 'rtl' : 'ltr',
       });
       this.#itemsBox.init();
+
+      this.hot.addHook('afterSetTheme', (themeName, firstRun) => {
+        if (!firstRun) {
+          this.#itemsBox.useTheme(themeName);
+        }
+      });
 
       const shortcutManager = this.#itemsBox.getShortcutManager();
       const gridContext = shortcutManager.getContext('grid');
@@ -307,9 +308,7 @@ export class MultipleSelectUI extends BaseUI {
    * Destroy instance.
    */
   destroy() {
-    if (this.#itemsBox) {
-      this.#itemsBox.destroy();
-    }
+    this.#itemsBox?.destroy();
     this.#searchInput.destroy();
     this.#clearAllUI.destroy();
     this.#selectAllUI.destroy();
@@ -334,8 +333,8 @@ export class MultipleSelectUI extends BaseUI {
     if (value === '') {
       filteredItems = [...this.#items];
     } else {
-      filteredItems = arrayFilter(this.#items,
-        item => (`${item.value}`).toLocaleLowerCase(this.getLocale()).indexOf(value) >= 0);
+      filteredItems = this.#items
+        .filter(item => (`${item.value}`).toLocaleLowerCase(this.getLocale()).indexOf(value) >= 0);
     }
 
     this.#itemsBox.loadData(filteredItems);
@@ -368,7 +367,8 @@ export class MultipleSelectUI extends BaseUI {
     const changes = [];
 
     event.preventDefault();
-    arrayEach(this.#itemsBox.getSourceData(), (row, rowIndex) => {
+
+    this.#itemsBox.getSourceData().forEach((row, rowIndex) => {
       row.checked = true;
 
       changes.push(dataRowToChangesArray(row, rowIndex)[0]);
@@ -386,7 +386,7 @@ export class MultipleSelectUI extends BaseUI {
     const changes = [];
 
     event.preventDefault();
-    arrayEach(this.#itemsBox.getSourceData(), (row, rowIndex) => {
+    this.#itemsBox.getSourceData().forEach((row, rowIndex) => {
       row.checked = false;
 
       changes.push(dataRowToChangesArray(row, rowIndex)[0]);
@@ -408,7 +408,7 @@ export default MultipleSelectUI;
 function valueToItems(availableItems, selectedValue) {
   const arrayAssertion = createArrayAssertion(selectedValue);
 
-  return arrayMap(availableItems, (item) => {
+  return availableItems.map((item) => {
     item.checked = arrayAssertion(item.value);
 
     return item;
@@ -424,7 +424,7 @@ function valueToItems(availableItems, selectedValue) {
 function itemsToValue(availableItems) {
   const items = [];
 
-  arrayEach(availableItems, (item) => {
+  availableItems.forEach((item) => {
     if (item.checked) {
       items.push(item.value);
     }

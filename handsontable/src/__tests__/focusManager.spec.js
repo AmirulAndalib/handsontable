@@ -12,6 +12,14 @@ describe('Focus Manager', () => {
     }
   });
 
+  describe('`getRefocusDelay` method', () => {
+    it('should return default (very small) delay (#dev-1762)', () => {
+      handsontable({});
+
+      expect(getFocusManager().getRefocusDelay()).toBe(1);
+    });
+  });
+
   describe('`getFocusMode` method', () => {
     it('should set it\'s internal `focusMode` property to "cell" after HOT initialization with `imeFastEdit` not' +
       ' defined', () => {
@@ -52,6 +60,18 @@ describe('Focus Manager', () => {
       });
 
       expect(getFocusManager().getFocusMode()).toEqual('cell');
+    });
+
+    it('should not reset internal `focusMode` config after calling `updateSettings` with an empty object', () => {
+      handsontable({
+        imeFastEdit: true,
+      });
+
+      expect(getFocusManager().getFocusMode()).toEqual('mixed');
+
+      updateSettings({});
+
+      expect(getFocusManager().getFocusMode()).toEqual('mixed');
     });
 
     it('should be able to get and set the current `focusMode` with appropriate API options', () => {
@@ -105,6 +125,31 @@ describe('Focus Manager', () => {
       getFocusManager().focusOnHighlightedCell(getCell(1, 1, true));
 
       expect(document.activeElement).toEqual(getCell(1, 1, true));
+    });
+  });
+
+  describe('`refocusToEditorTextarea` method', () => {
+    it('should focus the current editor element valid for the time when it is focused (#dev-2094)', async() => {
+      handsontable({
+        columns: [
+          { type: 'text' },
+          { type: 'numeric' },
+        ],
+        imeFastEdit: true,
+      });
+
+      getFocusManager().setRefocusDelay(50);
+      selectCell(0, 0);
+
+      await sleep(100);
+
+      expect(document.activeElement).toEqual(getActiveEditor().TEXTAREA);
+
+      selectCell(0, 1);
+
+      await sleep(100);
+
+      expect(document.activeElement).toEqual(getActiveEditor().TEXTAREA);
     });
   });
 });

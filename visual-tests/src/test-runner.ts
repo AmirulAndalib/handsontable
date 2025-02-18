@@ -1,32 +1,115 @@
 import path from 'path';
-import { test as _test, expect, Page } from '@playwright/test';
+import { test as baseTest, expect, Page } from '@playwright/test';
 import { helpers } from './helpers';
 import PageHolder from './page-holder';
+
+helpers.init();
 
 const stylesToAdd = [
   helpers.cssFiles.cookieInfo,
   helpers.cssFiles.dynamicDataFreeze
 ];
 
-/**
- * Exports the `test` function from Playwright, and configures its initial settings.
- *
- * @param {string} filename The name of the test.
- * @param {Function} callback The function to call for the test case.
- */
-export async function test(filename: string, callback: (pageInfo: { page: Page }) => Promise<void>) {
-  _test(helpers.testTitle(path.basename(filename)), async({ page }, workerInfo) => {
-    helpers.init(workerInfo);
-    const pageHolder = PageHolder.getInstance();
+const shouldImplicitlyNavigate = new WeakSet();
 
-    pageHolder.setPage(page);
+type TestParams = {
+  tablePage: Page;
+  customTitle: string;
+  goto: (url: string) => Promise<void>;
+};
 
-    await page.goto(helpers.testURL);
+// Define your custom fixture
+const test = baseTest.extend<TestParams>({
+  async tablePage({ page }, use, testInfo) {
+    PageHolder.getInstance().setPage(page);
+    helpers.screenshotsCount = 0;
+
+    if (shouldImplicitlyNavigate.has(page)) {
+      await use(page);
+
+      return;
+    }
+
+    await page.goto(
+      helpers
+        .setBaseUrl('/')
+        .setPageParams({ direction: 'ltr' })
+        .getFullUrl()
+    );
+
+    await page.waitForLoadState('load');
     await expect(page).toHaveTitle(helpers.expectedPageTitle);
+
+    helpers.setTestDetails({
+      rootDir: testInfo.config.rootDir,
+      testFilePath: testInfo.file,
+      browser: testInfo.project.name,
+      testedPageUrl: page.url(),
+    });
+
+    // disable animations and transitions on all testing pages (for consistent screenshots)
+    await page.addStyleTag({
+      content: `
+        *,
+        *::before,
+        *::after {
+            animation: none !important;
+            transition: none !important;
+        }
+      `
+    });
+
     stylesToAdd.forEach(item => page.addStyleTag({ path: helpers.cssPath(item) }));
-    const table = page.locator(helpers.selectors.mainTable);
+
+    const table = page.locator(helpers.selectors.anyTable).first();
 
     await table.waitFor();
-    await callback({ page });
-  });
-}
+    await use(page);
+  },
+  // eslint-disable-next-line no-empty-pattern
+  async customTitle({}, use, testInfo) {
+    const title = helpers.testTitle(path.basename(testInfo.title));
+
+    await use(title);
+  },
+  async goto({ page }, use, testInfo) {
+    shouldImplicitlyNavigate.add(page);
+
+    await use(async(url) => {
+      await page.goto(url);
+
+      helpers.setBaseUrl('/').setPageParams({ direction: 'ltr' });
+
+      await page.waitForLoadState('load');
+      await expect(page).toHaveTitle(helpers.expectedPageTitle);
+
+      helpers.setTestDetails({
+        rootDir: testInfo.config.rootDir,
+        testFilePath: testInfo.file,
+        browser: testInfo.project.name,
+        testedPageUrl: page.url(),
+      });
+
+      // disable animations and transitions on all testing pages (for consistent screenshots)
+      await page.addStyleTag({
+        content: `
+          *,
+          *::before,
+          *::after {
+              animation: none !important;
+              transition: none !important;
+          }
+        `
+      });
+
+      stylesToAdd.forEach(item => page.addStyleTag({ path: helpers.cssPath(item) }));
+
+      const table = page.locator(helpers.selectors.anyTable).first();
+
+      await table.waitFor();
+    });
+  }
+});
+
+// Export the custom fixture
+export { expect, test };

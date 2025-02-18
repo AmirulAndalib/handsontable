@@ -1,5 +1,5 @@
 import { BasePlugin } from '../base';
-import Hooks from '../../pluginHooks';
+import { Hooks } from '../../core/hooks';
 import { arrayEach } from '../../helpers/array';
 import { objectEach } from '../../helpers/object';
 import { CommandExecutor } from './commandExecutor';
@@ -22,8 +22,6 @@ import {
   ALIGNMENT,
   SEPARATOR,
 } from './predefinedItems';
-
-import './contextMenu.scss';
 
 export const PLUGIN_KEY = 'contextMenu';
 export const PLUGIN_PRIORITY = 70;
@@ -254,9 +252,14 @@ export class ContextMenu extends BasePlugin {
     this.prepareMenuItems();
     this.menu.open();
 
+    const themeHasTableBorder = this.menu.tableBorderWidth > 0;
+
     objectEach(offset, (value, key) => {
-      this.menu.setOffset(key, value);
+      const valueWithoutBorder = ['below', 'right'].includes(key) ? value + 1 : value - 1;
+
+      this.menu.setOffset(key, themeHasTableBorder ? value : valueWithoutBorder);
     });
+
     this.menu.setPosition(position);
   }
 

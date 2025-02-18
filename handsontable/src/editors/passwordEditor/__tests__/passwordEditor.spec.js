@@ -46,7 +46,7 @@ describe('PasswordEditor', () => {
 
     const editor = $(getActiveEditor().TEXTAREA_PARENT);
 
-    keyDownUp('enter');
+    keyDownUp('F2');
 
     expect(editor.offset()).toEqual($(getCell(0, 0)).offset());
   });
@@ -306,6 +306,31 @@ describe('PasswordEditor', () => {
     expect(editor.is(':visible')).toBe(true);
     expect(editor.is(':password')).toBe(true);
 
+  });
+
+  it('should correctly calculate the input width based on typed values', async() => {
+    handsontable({
+      columns: [
+        {
+          editor: 'password'
+        }
+      ]
+    });
+
+    selectCell(0, 0);
+    keyDownUp('enter');
+
+    const editor = getActiveEditor().TEXTAREA;
+
+    editor.value = 'wwwwwwwwwwwwwwwwww'; // "w" is wider than password dots
+    keyDownUp('w'); // trigger editor autoresize
+
+    await sleep(10);
+
+    expect(editor.style.width).forThemes(({ classic, main }) => {
+      classic.toBe('93px');
+      main.toBe('107px');
+    });
   });
 
   it('should set passwordEditor using \'password\' alias', () => {

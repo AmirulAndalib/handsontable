@@ -1,7 +1,8 @@
 import { useRef } from 'react';
-import { HotTable } from '@handsontable/react';
+import { HotTable } from '@handsontable/react-wrapper';
 import { registerAllModules } from 'handsontable/registry';
-import 'handsontable/dist/handsontable.full.min.css';
+import 'handsontable/styles/handsontable.css';
+import 'handsontable/styles/ht-theme-main.css';
 
 // register Handsontable's modules
 registerAllModules();
@@ -10,9 +11,10 @@ const ExampleComponent = () => {
   const hotTableComponentRef = useRef(null);
   const sortAsc = () => {
     // get the `ColumnSorting` plugin
-    const columnSorting = hotTableComponentRef.current.hotInstance.getPlugin('columnSorting');
+    const columnSorting =
+      hotTableComponentRef.current?.hotInstance?.getPlugin('columnSorting');
 
-    columnSorting.sort({
+    columnSorting?.sort({
       column: 0,
       sortOrder: 'asc',
     });
@@ -20,13 +22,22 @@ const ExampleComponent = () => {
 
   const unsort = () => {
     // get the `ColumnSorting` plugin
-    const columnSorting = hotTableComponentRef.current.hotInstance.getPlugin('columnSorting');
+    const columnSorting =
+      hotTableComponentRef.current?.hotInstance?.getPlugin('columnSorting');
 
-    columnSorting.clearSort();
+    columnSorting?.clearSort();
   };
 
   return (
     <>
+      <div className="example-controls-container">
+        <div className="controls">
+          <button onClick={sortAsc}>
+            Sort by the "Brand" column, in ascending order
+          </button>
+          <button onClick={unsort}>Go back to the original order</button>
+        </div>
+      </div>
       <HotTable
         ref={hotTableComponentRef}
         data={[
@@ -121,12 +132,6 @@ const ExampleComponent = () => {
         autoWrapCol={true}
         licenseKey="non-commercial-and-evaluation"
       />
-      <div className="controls">
-        <button onClick={sortAsc}>Sort by the "Brand" column, in ascending order</button>
-        <br />
-        <br />
-        <button onClick={unsort}>Go back to the original order</button>
-      </div>
     </>
   );
 };

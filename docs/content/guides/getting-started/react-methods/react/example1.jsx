@@ -1,7 +1,8 @@
 import { useRef } from 'react';
-import { HotTable } from '@handsontable/react';
+import { HotTable } from '@handsontable/react-wrapper';
 import { registerAllModules } from 'handsontable/registry';
-import 'handsontable/dist/handsontable.full.min.css';
+import 'handsontable/styles/handsontable.css';
+import 'handsontable/styles/ht-theme-main.css';
 
 // register Handsontable's modules
 registerAllModules();
@@ -13,15 +14,18 @@ const ExampleComponent = () => {
     ['A3', 'B3', 'C3', 'D3'],
     ['A4', 'B4', 'C4', 'D4'],
   ];
-  const hotTableComponentRef = useRef(null);
 
+  const hotTableComponentRef = useRef(null);
   const selectCell = () => {
     // The Handsontable instance is stored under the `hotInstance` property of the wrapper component.
-    hotTableComponentRef.current.hotInstance.selectCell(1, 1);
+    hotTableComponentRef.current?.hotInstance?.selectCell(1, 1);
   };
 
   return (
     <>
+      <div className="controls">
+        <button onClick={selectCell}>Select cell B2</button>
+      </div>
       <HotTable
         ref={hotTableComponentRef}
         data={data}
@@ -31,11 +35,8 @@ const ExampleComponent = () => {
         autoWrapCol={true}
         licenseKey="non-commercial-and-evaluation"
       />
-      <div className="controls">
-        <button onClick={selectCell}>Select cell B2</button>
-      </div>
     </>
   );
-}
+};
 
 export default ExampleComponent;

@@ -1,14 +1,12 @@
 import Handsontable from 'handsontable';
-import 'handsontable/dist/handsontable.full.min.css';
+import 'handsontable/styles/handsontable.css';
+import 'handsontable/styles/ht-theme-main.css';
 
 const container = document.querySelector('#example10');
-const hot = new Handsontable(container, {
+
+new Handsontable(container, {
   licenseKey: 'non-commercial-and-evaluation',
-  data: [
-    [0, 1, 2],
-    ['3c', '4b', 5],
-    [], []
-  ],
+  data: [[0, 1, 2], ['3c', '4b', 5], [], []],
   colHeaders: true,
   rowHeaders: true,
   columnSummary: [
@@ -18,7 +16,7 @@ const hot = new Handsontable(container, {
       destinationColumn: 0,
       reversedRowCoords: true,
       // force this column summary to treat non-numeric values as numeric values
-      forceNumeric: true
+      forceNumeric: true,
     },
     {
       type: 'sum',
@@ -26,9 +24,10 @@ const hot = new Handsontable(container, {
       destinationColumn: 1,
       reversedRowCoords: true,
       // force this column summary to treat non-numeric values as numeric values
-      forceNumeric: true
-    }
+      forceNumeric: true,
+    },
   ],
   autoWrapRow: true,
   autoWrapCol: true,
+  height: 'auto',
 });

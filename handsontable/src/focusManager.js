@@ -40,7 +40,7 @@ export class FocusManager {
    *
    * @type {number}
    */
-  #refocusDelay = 50;
+  #refocusDelay = 1;
   /**
    * Getter function for the element to be used when refocusing the browser after a delay. If `null`, the active
    * editor's `TEXTAREA` element will be used.
@@ -63,6 +63,7 @@ export class FocusManager {
 
     this.#hot.addHook('afterUpdateSettings', (...args) => this.#onUpdateSettings(...args));
     this.#hot.addHook('afterSelection', (...args) => this.#focusCell(...args));
+    this.#hot.addHook('afterSelectionFocusSet', (...args) => this.#focusCell(...args));
     this.#hot.addHook('afterSelectionEnd', (...args) => this.#focusEditorElement(...args));
   }
 
@@ -126,10 +127,9 @@ export class FocusManager {
   getRefocusElement() {
     if (typeof this.#refocusElementGetter === 'function') {
       return this.#refocusElementGetter();
-
-    } else {
-      return this.#hot.getActiveEditor()?.TEXTAREA;
     }
+
+    return this.#hot.getActiveEditor()?.TEXTAREA;
   }
 
   /**
@@ -177,17 +177,14 @@ export class FocusManager {
    * @param {number} [delay] Delay in milliseconds.
    */
   refocusToEditorTextarea(delay = this.#refocusDelay) {
-    const refocusElement = this.getRefocusElement();
-
     // Re-focus on the editor's `TEXTAREA` element (or a predefined element) if the `imeFastEdit` option is enabled.
     if (
       this.#hot.getSettings().imeFastEdit &&
-      !this.#hot.getActiveEditor()?.isOpened() &&
-      !!refocusElement
+      !this.#hot.getActiveEditor()?.isOpened()
     ) {
       if (!this.#debouncedSelect.has(delay)) {
         this.#debouncedSelect.set(delay, debounce(() => {
-          refocusElement.select();
+          this.getRefocusElement()?.select();
         }, delay));
       }
 
@@ -247,7 +244,7 @@ export class FocusManager {
     this.#getSelectedCell((selectedCell) => {
       if (
         this.getFocusMode() === FOCUS_MODES.MIXED &&
-        selectedCell.nodeName === 'TD'
+        selectedCell?.nodeName === 'TD'
       ) {
         this.refocusToEditorTextarea();
       }
@@ -260,11 +257,8 @@ export class FocusManager {
    * @param {object} newSettings The new settings passed to the `updateSettings` method.
    */
   #onUpdateSettings(newSettings) {
-    if (newSettings.imeFastEdit && this.getFocusMode() !== FOCUS_MODES.MIXED) {
-      this.setFocusMode(FOCUS_MODES.MIXED);
-
-    } else if (!newSettings.imeFastEdit && this.getFocusMode() !== FOCUS_MODES.CELL) {
-      this.setFocusMode(FOCUS_MODES.CELL);
+    if (typeof newSettings.imeFastEdit === 'boolean') {
+      this.setFocusMode(newSettings.imeFastEdit ? FOCUS_MODES.MIXED : FOCUS_MODES.CELL);
     }
   }
 }

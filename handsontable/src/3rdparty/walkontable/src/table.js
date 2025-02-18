@@ -68,7 +68,6 @@ class Table {
    * @type {boolean}
    */
   isTableVisible = false;
-
   tableOffset = 0;
   holderOffset = 0;
   /**
@@ -131,6 +130,7 @@ class Table {
       rowUtils: this.rowUtils,
       columnUtils: this.columnUtils,
       cellRenderer: this.wtSettings.getSettingPure('cellRenderer'),
+      stylesHandler: this.dataAccessObject.stylesHandler,
     });
   }
 
@@ -285,12 +285,12 @@ class Table {
     const rowHeadersCount = rowHeaders.length;
     const columnHeaders = wtSettings.getSetting('columnHeaders');
     const columnHeadersCount = columnHeaders.length;
-    let syncScroll = false;
     let runFastDraw = fastDraw;
 
     if (this.isMaster) {
+      wtOverlays.beforeDraw();
       this.holderOffset = offset(this.holder);
-      runFastDraw = wtViewport.createRenderCalculators(runFastDraw);
+      runFastDraw = wtViewport.createCalculators(runFastDraw);
 
       if (rowHeadersCount && !wtSettings.getSetting('fixedColumnsStart')) {
         const leftScrollPos = wtOverlays.inlineStartOverlay.getScrollPosition();
@@ -304,17 +304,8 @@ class Table {
       }
     }
 
-    if (this.isMaster) {
-      syncScroll = wtOverlays.updateStateOfRendering();
-    }
-
     if (runFastDraw) {
       if (this.isMaster) {
-        // in case we only scrolled without redraw, update visible rows information in oldRowsCalculator
-        wtViewport.createVisibleCalculators();
-        wtViewport.createPartiallyVisibleCalculators();
-      }
-      if (wtOverlays) {
         wtOverlays.refresh(true);
       }
     } else {
@@ -352,15 +343,12 @@ class Table {
         this.resetOversizedRows();
 
         this.tableRenderer
+          .setActiveOverlayName(this.name)
           .setViewportSize(this.getRenderedRowsCount(), this.getRenderedColumnsCount())
           .setFilters(this.rowFilter, this.columnFilter)
           .render();
 
-        let workspaceWidth;
-
         if (this.isMaster) {
-          workspaceWidth = this.dataAccessObject.workspaceWidth;
-          this.dataAccessObject.wtViewport.containerWidth = null;
           this.markOversizedColumnHeaders();
         }
 
@@ -371,26 +359,12 @@ class Table {
         }
 
         if (this.isMaster) {
-          this.dataAccessObject.wtViewport.createVisibleCalculators();
-          this.dataAccessObject.wtViewport.createPartiallyVisibleCalculators();
-          this.dataAccessObject.wtOverlays.refresh(false);
-          this.dataAccessObject.wtOverlays.applyToDOM();
-
-          const hiderWidth = outerWidth(this.hider);
-          const tableWidth = outerWidth(this.TABLE);
-
-          if (hiderWidth !== 0 && (tableWidth !== hiderWidth)) {
-            // Recalculate the column widths, if width changes made in the overlays removed the scrollbar, thus changing the viewport width.
-            this.columnUtils.calculateWidths();
-            this.tableRenderer.renderer.colGroup.render();
+          if (!this.wtSettings.getSetting('externalRowCalculator')) {
+            wtViewport.createVisibleCalculators();
           }
 
-          if (workspaceWidth !== this.dataAccessObject.wtViewport.getWorkspaceWidth()) {
-            // workspace width changed though to shown/hidden vertical scrollbar. Let's reapply stretching
-            this.dataAccessObject.wtViewport.containerWidth = null;
-            this.columnUtils.calculateWidths();
-            this.tableRenderer.renderer.colGroup.render();
-          }
+          wtOverlays.refresh(false);
+          wtOverlays.applyToDOM();
 
           this.wtSettings.getSetting('onDraw', true);
 
@@ -432,8 +406,8 @@ class Table {
         .render(runFastDraw);
     }
 
-    if (syncScroll) {
-      wtOverlays.syncScrollWithMaster();
+    if (this.isMaster) {
+      wtOverlays.afterDraw();
     }
 
     this.dataAccessObject.drawn = true;
@@ -447,7 +421,7 @@ class Table {
   markIfOversizedColumnHeader(col) {
     const sourceColIndex = this.columnFilter.renderedToSource(col);
     let level = this.wtSettings.getSetting('columnHeaders').length;
-    const defaultRowHeight = this.wtSettings.getSetting('defaultRowHeight');
+    const defaultRowHeight = this.dataAccessObject.stylesHandler.getDefaultRowHeight();
     let previousColHeaderHeight;
     let currentHeader;
     let currentHeaderHeight;
@@ -553,7 +527,8 @@ class Table {
   getCell(coords) {
     let row = coords.row;
     let column = coords.col;
-    const hookResult = this.wtSettings.getSetting('onModifyGetCellCoords', row, column);
+    const hookResult = this.wtSettings
+      .getSetting('onModifyGetCellCoords', row, column, !this.isMaster, 'render');
 
     if (hookResult && Array.isArray(hookResult)) {
       [row, column] = hookResult;
@@ -618,10 +593,9 @@ class Table {
       } else {
         return parentElement.childNodes[renderedRowIndex];
       }
-
-    } else {
-      return false;
     }
+
+    return false;
   }
 
   /**
@@ -754,6 +728,13 @@ class Table {
       col = this.columnFilter.visibleRowHeadedColumnToSourceColumn(col);
     }
 
+    const hookResult = this.wtSettings
+      .getSetting('onModifyGetCoordsElement', row, col);
+
+    if (hookResult && Array.isArray(hookResult)) {
+      [row, col] = hookResult;
+    }
+
     return this.wot.createCellCoords(row, col);
   }
 
@@ -765,10 +746,14 @@ class Table {
       return;
     }
     let rowCount = this.TBODY.childNodes.length;
-    const expectedTableHeight = rowCount * this.wtSettings.getSetting('defaultRowHeight');
+    const expectedTableHeight = rowCount * this.dataAccessObject.stylesHandler.getDefaultRowHeight();
     const actualTableHeight = innerHeight(this.TBODY) - 1;
+    const borderBoxSizing = this.wot.stylesHandler.areCellsBorderBox();
+    const rowHeightFn = borderBoxSizing ? outerHeight : innerHeight;
+    const borderCompensation = borderBoxSizing ? 0 : 1;
+    const firstRowBorderCompensation = borderBoxSizing ? 1 : 0;
     let previousRowHeight;
-    let rowInnerHeight;
+    let rowCurrentHeight;
     let sourceRowIndex;
     let currentTr;
     let rowHeader;
@@ -785,16 +770,25 @@ class Table {
       currentTr = this.getTrForRow(sourceRowIndex);
       rowHeader = currentTr.querySelector('th');
 
+      const topBorderCompensation = sourceRowIndex === 0 ? firstRowBorderCompensation : 0;
+
       if (rowHeader) {
-        rowInnerHeight = innerHeight(rowHeader);
+        rowCurrentHeight = rowHeightFn(rowHeader);
+
       } else {
-        rowInnerHeight = innerHeight(currentTr) - 1;
+        rowCurrentHeight = rowHeightFn(currentTr) - borderCompensation;
       }
 
-      if ((!previousRowHeight && this.wtSettings.getSetting('defaultRowHeight') < rowInnerHeight ||
-          previousRowHeight < rowInnerHeight)) {
-        rowInnerHeight += 1;
-        this.dataAccessObject.wtViewport.oversizedRows[sourceRowIndex] = rowInnerHeight;
+      if (
+        !previousRowHeight &&
+        this.dataAccessObject.stylesHandler.getDefaultRowHeight() < rowCurrentHeight - topBorderCompensation ||
+        previousRowHeight < rowCurrentHeight
+      ) {
+        if (!borderBoxSizing) {
+          rowCurrentHeight += 1;
+        }
+
+        this.dataAccessObject.wtViewport.oversizedRows[sourceRowIndex] = rowCurrentHeight;
       }
     }
   }
@@ -1049,14 +1043,6 @@ class Table {
    */
   getColumnWidth(sourceColumn) {
     return this.columnUtils.getWidth(sourceColumn);
-  }
-
-  /**
-   * @param {number} sourceColumn The physical column index.
-   * @returns {number}
-   */
-  getStretchedColumnWidth(sourceColumn) {
-    return this.columnUtils.getStretchedColumnWidth(sourceColumn);
   }
 
   /**

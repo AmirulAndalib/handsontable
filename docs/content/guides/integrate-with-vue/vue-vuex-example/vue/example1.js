@@ -2,7 +2,8 @@ import Vue from 'vue';
 import Vuex from 'vuex';
 import { HotTable } from '@handsontable/vue';
 import { registerAllModules } from 'handsontable/registry';
-import 'handsontable/dist/handsontable.full.css';
+import 'handsontable/styles/handsontable.css';
+import 'handsontable/styles/ht-theme-main.css';
 
 Vue.use(Vuex);
 
@@ -48,11 +49,11 @@ const ExampleComponent = {
     updateVuexPreview() {
       // This method serves only as a renderer for the Vuex's state dump.
 
-      const previewTable = document.querySelector('#vuex-preview table');
-      let newInnerHtml = '<tbody>';
+      const previewTable = document.querySelector('#vuex-preview pre');
+      let newInnerHtml = '<div>';
 
       for (const [key, value] of Object.entries(this.$store.state)) {
-        newInnerHtml += '<tr><td class="table-container">';
+        newInnerHtml += '<div><div class="table-container">';
 
         if (key === 'hotData' && Array.isArray(value)) {
           newInnerHtml += '<strong>hotData:</strong> <br><table><tbody>';
@@ -78,9 +79,9 @@ const ExampleComponent = {
           newInnerHtml += '</ul>';
         }
 
-        newInnerHtml += '</td></tr>';
+        newInnerHtml += '</div></div>';
       }
-      newInnerHtml += '</tbody>';
+      newInnerHtml += '</div>';
 
       previewTable.innerHTML = newInnerHtml;
     }

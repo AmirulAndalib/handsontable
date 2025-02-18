@@ -1,6 +1,7 @@
-import { HotTable } from '@handsontable/react';
+import { HotTable } from '@handsontable/react-wrapper';
 import { registerAllModules } from 'handsontable/registry';
-import 'handsontable/dist/handsontable.full.min.css';
+import 'handsontable/styles/handsontable.css';
+import 'handsontable/styles/ht-theme-main.css';
 
 // register Handsontable's modules
 registerAllModules();
@@ -64,7 +65,7 @@ const ExampleComponent = () => {
         {
           title: 'Model<br>(text)',
           // set the type of the 'Model' column
-          type: 'text', // 'text' is the default type, so you can omit this line
+          type: 'text',
           data: 'model',
         },
         {
@@ -126,7 +127,7 @@ const ExampleComponent = () => {
         },
       ]}
       columnSorting={true}
-      height={168}
+      height="auto"
       stretchH="all"
       autoWrapRow={true}
       autoWrapCol={true}

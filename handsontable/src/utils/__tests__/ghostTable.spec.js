@@ -54,7 +54,10 @@ describe('GhostTable', () => {
       gt.addRow(2, samples);
 
       expect(gt.createContainer.calls.count()).toBe(1);
-      expect(gt.createContainer.calls.mostRecent().args).toEqual(['handsontable']);
+      expect(gt.createContainer.calls.mostRecent().args).forThemes(({ classic, main }) => {
+        classic.toEqual(['ht-wrapper handsontable']);
+        main.toEqual(['ht-wrapper handsontable ht-theme-main']);
+      });
     });
 
     it('should add row to rows collection after call `addRow` method', () => {
@@ -115,11 +118,20 @@ describe('GhostTable', () => {
 
       expect(heightSpy.calls.count()).toBe(3);
       expect(heightSpy.calls.argsFor(0)[0]).toBe(0);
-      expect(heightSpy.calls.argsFor(0)[1]).toBe(23);
+      expect(heightSpy.calls.argsFor(0)[1]).forThemes(({ classic, main }) => {
+        classic.toBe(23);
+        main.toBe(29);
+      });
       expect(heightSpy.calls.argsFor(1)[0]).toBe(1);
-      expect(heightSpy.calls.argsFor(1)[1]).toBe(64);
+      expect(heightSpy.calls.argsFor(1)[1]).forThemes(({ classic, main }) => {
+        classic.toBe(64);
+        main.toBe(69);
+      });
       expect(heightSpy.calls.argsFor(2)[0]).toBe(2);
-      expect(heightSpy.calls.argsFor(2)[1]).toBe(43);
+      expect(heightSpy.calls.argsFor(2)[1]).forThemes(({ classic, main }) => {
+        classic.toBe(43);
+        main.toBe(49);
+      });
     });
   });
 
@@ -157,7 +169,10 @@ describe('GhostTable', () => {
       gt.addColumn(2, samples);
 
       expect(gt.createContainer.calls.count()).toBe(1);
-      expect(gt.createContainer.calls.mostRecent().args).toEqual(['handsontable']);
+      expect(gt.createContainer.calls.mostRecent().args).forThemes(({ classic, main }) => {
+        classic.toEqual(['ht-wrapper handsontable']);
+        main.toEqual(['ht-wrapper handsontable ht-theme-main']);
+      });
     });
 
     it('should add column to columns collection after call `addColumn` method', () => {
@@ -220,11 +235,20 @@ describe('GhostTable', () => {
 
       expect(widthSpy.calls.count()).toBe(3);
       expect(widthSpy.calls.argsFor(0)[0]).toBe(0);
-      expect(widthSpy.calls.argsFor(0)[1]).toBe(66);
+      expect(widthSpy.calls.argsFor(0)[1]).forThemes(({ classic, main }) => {
+        classic.toBe(66);
+        main.toBe(84);
+      });
       expect(widthSpy.calls.argsFor(1)[0]).toBe(1);
-      expect(widthSpy.calls.argsFor(1)[1]).toBe(31);
+      expect(widthSpy.calls.argsFor(1)[1]).forThemes(({ classic, main }) => {
+        classic.toBe(31);
+        main.toBe(43);
+      });
       expect(widthSpy.calls.argsFor(2)[0]).toBe(2);
-      expect(widthSpy.calls.argsFor(2)[1]).toBe(53);
+      expect(widthSpy.calls.argsFor(2)[1]).forThemes(({ classic, main }) => {
+        classic.toBe(53);
+        main.toBe(68);
+      });
     });
 
     it('should get rounded up widths when the browser calculates the columns as a decimal values', () => {
@@ -296,5 +320,55 @@ describe('GhostTable', () => {
 
     expect(gt.isVertical()).toBe(false);
     expect(gt.isHorizontal()).toBe(true);
+  });
+
+  it('should not change the coords of the cell meta after row rendering', () => {
+    const hot = handsontable(hotSettings);
+
+    gt = new Handsontable.__GhostTable(hot);
+
+    spyOn(hot, 'getCellMeta').and.returnValue({
+      row: 3,
+      col: 4,
+      visualRow: 5,
+      visualCol: 6,
+      renderer: jasmine.createSpy('renderer'),
+    });
+
+    gt.samples = new Map([[0, { strings: [{ col: 0, value: 'test' }] }]]);
+    gt.createRow(0);
+
+    const cellMeta = getCellMeta(0, 0);
+
+    expect(cellMeta.renderer).toHaveBeenCalledTimes(1);
+    expect(cellMeta.row).toBe(3);
+    expect(cellMeta.col).toBe(4);
+    expect(cellMeta.visualRow).toBe(5);
+    expect(cellMeta.visualCol).toBe(6);
+  });
+
+  it('should not change the coords of the cell meta after column rendering', () => {
+    const hot = handsontable(hotSettings);
+
+    gt = new Handsontable.__GhostTable(hot);
+
+    spyOn(hot, 'getCellMeta').and.returnValue({
+      row: 3,
+      col: 4,
+      visualRow: 5,
+      visualCol: 6,
+      renderer: jasmine.createSpy('renderer'),
+    });
+
+    gt.samples = new Map([[0, { strings: [{ row: 0, value: 'test' }] }]]);
+    gt.createCol(0);
+
+    const cellMeta = getCellMeta(0, 0);
+
+    expect(cellMeta.renderer).toHaveBeenCalledTimes(1);
+    expect(cellMeta.row).toBe(3);
+    expect(cellMeta.col).toBe(4);
+    expect(cellMeta.visualRow).toBe(5);
+    expect(cellMeta.visualCol).toBe(6);
   });
 });

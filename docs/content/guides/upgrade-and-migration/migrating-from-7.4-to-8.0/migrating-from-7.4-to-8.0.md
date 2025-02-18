@@ -10,6 +10,7 @@ react:
   id: ivkac4xa
   metaTitle: Migrate from 7.4 to 8.0 - React Data Grid | Handsontable
 searchCategory: Guides
+category: Upgrade and migration
 ---
 
 # Migrate from 7.4 to 8.0
@@ -32,7 +33,7 @@ Handsontable 8.0.0 introduces [`IndexMapper`](@/api/indexMapper.md), a new API t
 
 - Check if you use any of the features listed in the [Keywords](#keywords-alphabetically) section. You need to address them first after installing Handsontable 8.0.0.
 - To keep backward compatibility, test solutions proposed in this guide. If you experience any problems, contact our [Technical Support Team](https://handsontable.com/contact?category=technical_support).
-- You can also check the release notes for a complete list of all changes.
+- You can also check the changelog for a complete list of all changes.
 
 ## Keywords (alphabetically)
 
@@ -559,7 +560,7 @@ hot.setSourceDataAtCell(0, 'available', true) // in 8.0.0, this sets a new prope
 
 ::: only-for react
 ```js
-<HotTable>
+<HotTable
   data={[
     { model: 'Roadster', company: 'Tesla' },
     { model: 'i3', company: 'BMW' },
@@ -592,11 +593,19 @@ If the [`NestedRows`](@/api/nestedRows.md) plugin is enabled, moving rows is pos
 
 The `drag*` methods come with a parameter called `dropIndex`. It directs where to **place** the dragged elements. The place you intend to drag the element is managed by **drop indexes**. You can imagine some sort of a drop zone between actual indexes of elements:
 
+<span class="img-invert">
+
 ![drag_action]({{$basePath}}/img/drag_action.svg)
+
+</span>
 
 The `move*` methods come with a parameter called `finalIndex`. It tells where to **overlap** the first element from the moved ones. The place you intend to move the element is managed by **visual indexes**.
 
+<span class="img-invert">
+
 ![move_action]({{$basePath}}/img/move_action.svg)
+
+</span>
 
 Please note that in case of `move*` methods some move actions are limited. For example, if you initiate a move of **more than one element** to the **last position** (visual index = the number of items - 1) the operation will be canceled. The first element in the collection you would like to move will try to reach the last position (`finalIndex`) which is feasible. However, the next ones will attempt to reach the position exceeding the number of all items.
 
@@ -650,11 +659,19 @@ const hotInstance = new Handsontable(container, {
 
 The results before:
 
+<span class="img-invert">
+
 ![before_8]({{$basePath}}/img/spare_before_8.svg)
+
+</span>
 
 The results after:
 
+<span class="img-invert">
+
 ![after_8]({{$basePath}}/img/spare_after_8.svg)
+
+</span>
 
 To ensure your application works as expected you should review it and search the use cases of [`minSpareRows`](@/api/options.md#minsparerows) or [`minRows`](@/api/options.md#minrows). If your application relies on this mechanism, you may need to adapt your application's code. For example, in prior versions the following code:
 
@@ -821,11 +838,19 @@ Left mouse-button click on the corner will select all cells with headers in 8.0.
 
 It used to select just one cell:
 
+<span class="img-invert">
+
 ![LMB_was]({{$basePath}}/img/LMB_was.gif)
+
+</span>
 
 Now the expected behavior is to select all cells:
 
+<span class="img-invert">
+
 ![LMB_is]({{$basePath}}/img/LMB_is.gif)
+
+</span>
 
 To keep the previous behavior you need to use the following workaround:
 

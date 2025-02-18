@@ -4,7 +4,7 @@ import {
 } from '../../helpers/dom/element';
 import { isNumeric, clamp } from '../../helpers/number';
 import { toSingleLine } from '../../helpers/templateLiteralTag';
-import { isLeftClick, isRightClick } from '../../helpers/dom/event';
+import { isLeftClick, isRightClick, isTouchEvent } from '../../helpers/dom/event';
 import { warn } from '../../helpers/console';
 import {
   ACTIVE_HEADER_TYPE,
@@ -13,8 +13,6 @@ import {
 import { BasePlugin } from '../base';
 import StateManager from './stateManager';
 import GhostTable from './utils/ghostTable';
-
-import './nestedHeaders.css';
 
 export const PLUGIN_KEY = 'nestedHeaders';
 export const PLUGIN_PRIORITY = 280;
@@ -31,6 +29,7 @@ export const PLUGIN_PRIORITY = 280;
  * To make any header wider (covering multiple table columns), it's corresponding configuration array element should be
  * provided as an object with `label` and `colspan` properties. The `label` property defines the header's label,
  * while the `colspan` property defines a number of columns that the header should cover.
+ * You can also set custom class names to any of the headers by providing the `headerClassName` property.
  *
  * __Note__ that the plugin supports a *nested* structure, which means, any header cannot be wider than it's "parent". In
  * other words, headers cannot overlap each other.
@@ -42,7 +41,7 @@ export const PLUGIN_PRIORITY = 280;
  * const hot = new Handsontable(container, {
  *   data: getData(),
  *   nestedHeaders: [
- *     ['A', {label: 'B', colspan: 8}, 'C'],
+ *     ['A', {label: 'B', colspan: 8, headerClassName: 'htRight'}, 'C'],
  *     ['D', {label: 'E', colspan: 4}, {label: 'F', colspan: 4}, 'G'],
  *     ['H', {label: 'I', colspan: 2}, {label: 'J', colspan: 2}, {label: 'K', colspan: 2}, {label: 'L', colspan: 2}, 'M'],
  *     ['N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W']
@@ -55,7 +54,7 @@ export const PLUGIN_PRIORITY = 280;
  * <HotTable
  *   data={getData()}
  *   nestedHeaders={[
- *     ['A', {label: 'B', colspan: 8}, 'C'],
+ *     ['A', {label: 'B', colspan: 8, headerClassName: 'htRight'}, 'C'],
  *     ['D', {label: 'E', colspan: 4}, {label: 'F', colspan: 4}, 'G'],
  *     ['H', {label: 'I', colspan: 2}, {label: 'J', colspan: 2}, {label: 'K', colspan: 2}, {label: 'L', colspan: 2}, 'M'],
  *     ['N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W']
@@ -98,6 +97,14 @@ export class NestedHeaders extends BasePlugin {
    * @type {boolean}
    */
   #isColumnsSelectionInProgress = false;
+  /**
+   * Keeps the last highlight position made by column selection. The coords are necessary to scroll
+   * the viewport to the correct position when the nested header is clicked when the `navigableHeaders`
+   * option is disabled.
+   *
+   * @type {CellCoords | null}
+   */
+  #recentlyHighlightCoords = null;
   /**
    * Custom helper for getting widths of the nested headers.
    *
@@ -147,6 +154,7 @@ export class NestedHeaders extends BasePlugin {
     this.addHook('beforeSelectionHighlightSet', (...args) => this.#onBeforeSelectionHighlightSet(...args));
     this.addHook('modifyTransformStart', (...args) => this.#onModifyTransformStart(...args));
     this.addHook('afterSelection', () => this.#updateFocusHighlightPosition());
+    this.addHook('afterSelectionFocusSet', () => this.#updateFocusHighlightPosition());
     this.addHook('beforeViewportScrollHorizontally', (...args) => this.#onBeforeViewportScrollHorizontally(...args));
     this.addHook('afterGetColumnHeaderRenderers', array => this.#onAfterGetColumnHeaderRenderers(array));
     this.addHook('modifyColWidth', (...args) => this.#onModifyColWidth(...args));
@@ -341,11 +349,13 @@ export class NestedHeaders extends BasePlugin {
 
       TH.removeAttribute('colspan');
       removeClass(TH, 'hiddenHeader');
+      removeClass(TH, 'hiddenHeaderText');
 
       const {
         colspan,
         isHidden,
         isPlaceholder,
+        headerClassNames,
       } = this.#stateManager.getHeaderSettings(headerLevel, visualColumnIndex) ?? { label: '' };
 
       if (isPlaceholder || isHidden) {
@@ -355,6 +365,11 @@ export class NestedHeaders extends BasePlugin {
         const { wtOverlays } = view._wt;
         const isTopInlineStartOverlay = wtOverlays.topInlineStartCornerOverlay?.clone.wtTable.THEAD.contains(TH);
         const isInlineStartOverlay = wtOverlays.inlineStartOverlay?.clone.wtTable.THEAD.contains(TH);
+        const isTopOverlay = wtOverlays.topOverlay?.clone.wtTable.THEAD.contains(TH);
+
+        if (isTopOverlay && visualColumnIndex < fixedColumnsStart) {
+          addClass(TH, 'hiddenHeaderText');
+        }
 
         // Check if there is a fixed column enabled, if so then reduce colspan to fixed column width.
         const correctedColspan = isTopInlineStartOverlay || isInlineStartOverlay ?
@@ -369,8 +384,18 @@ export class NestedHeaders extends BasePlugin {
         visualColumnIndex,
         TH,
         (...args) => this.getColumnHeaderValue(...args),
-        headerLevel
+        headerLevel,
       );
+
+      // Replace the higher-order `headerClassName`s with the one provided in the plugin config, if it was provided.
+      if (!isPlaceholder && !isHidden) {
+        const innerHeaderDiv = TH.querySelector('div.relative');
+
+        if (innerHeaderDiv && headerClassNames && headerClassNames.length > 0) {
+          removeClass(innerHeaderDiv, this.hot.getColumnMeta(visualColumnIndex).headerClassName);
+          addClass(innerHeaderDiv, headerClassNames);
+        }
+      }
     };
   }
 
@@ -430,9 +455,12 @@ export class NestedHeaders extends BasePlugin {
    * indexes are used.
    *
    * @param {number} visualColumn A visual column index to which the viewport will be scrolled.
+   * @param {{ value: 'auto' | 'start' | 'end' }} snapping If `'start'`, viewport is scrolled to show
+   * the cell on the left of the table. If `'end'`, viewport is scrolled to show the cell on the right of
+   * the table. When `'auto'`, the viewport is scrolled only when the column is outside of the viewport.
    * @returns {number}
    */
-  #onBeforeViewportScrollHorizontally(visualColumn) {
+  #onBeforeViewportScrollHorizontally(visualColumn, snapping) {
     const selection = this.hot.getSelectedRangeLast();
 
     if (!selection) {
@@ -440,23 +468,56 @@ export class NestedHeaders extends BasePlugin {
     }
 
     const { highlight } = selection;
-    const isNestedHeadersRange = highlight.isHeader() && highlight.col >= 0;
+    const { navigableHeaders } = this.hot.getSettings();
+    const isSelectedByColumnHeader = this.hot.selection.isSelectedByColumnHeader();
+    const highlightRow = navigableHeaders ? highlight.row : this.#recentlyHighlightCoords?.row;
+    const highlightColumn = isSelectedByColumnHeader ? visualColumn : highlight.col;
+    const isNestedHeadersRange = highlightRow < 0 && highlightColumn >= 0;
+
+    this.#recentlyHighlightCoords = null;
 
     if (!isNestedHeadersRange) {
       return visualColumn;
     }
 
-    const firstColumn = this.hot.view.getFirstFullyVisibleColumn();
-    const lastColumn = this.hot.view.getLastFullyVisibleColumn();
-    const mostLeftColumnIndex = this.#stateManager.findLeftMostColumnIndex(highlight.row, highlight.col);
-    const mostRightColumnIndex = this.#stateManager.findRightMostColumnIndex(highlight.row, highlight.col);
+    const firstVisibleColumn = this.hot.getFirstFullyVisibleColumn();
+    const lastVisibleColumn = this.hot.getLastFullyVisibleColumn();
+    const viewportWidth = lastVisibleColumn - firstVisibleColumn + 1;
+    const mostLeftColumnIndex = this.#stateManager.findLeftMostColumnIndex(highlightRow, highlightColumn);
+    const mostRightColumnIndex = this.#stateManager.findRightMostColumnIndex(highlightRow, highlightColumn);
+    const headerWidth = mostRightColumnIndex - mostLeftColumnIndex + 1;
 
-    // do not scroll the viewport when the header is wider than the viewport
-    if (mostLeftColumnIndex < firstColumn && mostRightColumnIndex > lastColumn) {
-      return visualColumn;
+    // scroll the viewport always to the left when the header is wider than the viewport
+    if (mostLeftColumnIndex < firstVisibleColumn && mostRightColumnIndex > lastVisibleColumn) {
+      return mostLeftColumnIndex;
     }
 
-    return mostLeftColumnIndex < firstColumn ? mostLeftColumnIndex : mostRightColumnIndex;
+    if (isSelectedByColumnHeader) {
+      let scrollColumnIndex = null;
+
+      if (mostLeftColumnIndex >= firstVisibleColumn && mostRightColumnIndex > lastVisibleColumn) {
+        if (headerWidth > viewportWidth) {
+          snapping.value = 'start';
+          scrollColumnIndex = mostLeftColumnIndex;
+        } else {
+          snapping.value = 'end';
+          scrollColumnIndex = mostRightColumnIndex;
+        }
+
+      } else if (mostLeftColumnIndex < firstVisibleColumn && mostRightColumnIndex <= lastVisibleColumn) {
+        if (headerWidth > viewportWidth) {
+          snapping.value = 'end';
+          scrollColumnIndex = mostRightColumnIndex;
+        } else {
+          snapping.value = 'start';
+          scrollColumnIndex = mostLeftColumnIndex;
+        }
+      }
+
+      return scrollColumnIndex;
+    }
+
+    return mostLeftColumnIndex <= firstVisibleColumn ? mostLeftColumnIndex : mostRightColumnIndex;
   }
 
   /**
@@ -605,7 +666,7 @@ export class NestedHeaders extends BasePlugin {
         columnsToSelect.push(columnIndex, columnIndex + origColspan - 1, coords.row);
       }
 
-    } else if (isLeftClick(event) || (isRightClick(event) && allowRightClickSelection)) {
+    } else if (isLeftClick(event) || (isRightClick(event) && allowRightClickSelection) || isTouchEvent(event)) {
       columnsToSelect.push(columnIndex, columnIndex + origColspan - 1, coords.row);
     }
 
@@ -623,7 +684,7 @@ export class NestedHeaders extends BasePlugin {
    *                            a boolean value that allows or disallows changing the selection for that particular area.
    */
   #onBeforeOnCellMouseOver(event, coords, TD, controller) {
-    if (!this.hot.view.isMouseDown()) {
+    if (!this.hot.view.isMouseDown() || controller.column) {
       return;
     }
 
@@ -758,8 +819,9 @@ export class NestedHeaders extends BasePlugin {
    *
    * @param {CellCoords} from The coords object where the selection starts.
    * @param {CellCoords} to The coords object where the selection ends.
+   * @param {CellCoords} highlight The coords object where the focus is.
    */
-  #onBeforeSelectColumns(from, to) {
+  #onBeforeSelectColumns(from, to, highlight) {
     const headerLevel = from.row;
     const startNodeData = this._getHeaderTreeNodeDataByCoords({
       row: headerLevel,
@@ -769,6 +831,8 @@ export class NestedHeaders extends BasePlugin {
       row: headerLevel,
       col: to.col,
     });
+
+    this.#recentlyHighlightCoords = highlight.clone();
 
     if (to.col < from.col) { // Column selection from right to left
       if (startNodeData) {

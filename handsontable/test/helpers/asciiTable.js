@@ -16,12 +16,31 @@ function getSelectionSymbol(cell) {
   const hasFill = cell.classList.contains('fill');
   const hasActiveHeader = cell.classList.contains('ht__active_highlight');
   const hasHighlight = cell.classList.contains('ht__highlight');
+  const isMergedCellMultiple = cell.classList.contains('fullySelectedMergedCell-multiple');
   let areaLevel = new Array(7)
     .fill()
     .map((_, i, arr) => `area-${arr.length - i}`)
     .find(className => cell.classList.contains(className));
 
-  areaLevel = areaLevel ? parseInt(areaLevel.replace('area-', ''), 10) : areaLevel;
+  if (typeof areaLevel === 'string') {
+    areaLevel = parseInt(areaLevel.replace('area-', ''), 10);
+  }
+
+  let areaLevelMergedCell;
+
+  if (isMergedCellMultiple) {
+    areaLevelMergedCell = 0;
+
+  } else {
+    areaLevelMergedCell = new Array(7)
+      .fill()
+      .map((_, i, arr) => `fullySelectedMergedCell-${arr.length - i - 1}`)
+      .find(className => cell.classList.contains(className));
+
+    if (typeof areaLevelMergedCell === 'string') {
+      areaLevelMergedCell = parseInt(areaLevelMergedCell.replace('fullySelectedMergedCell-', ''), 10);
+    }
+  }
 
   let symbol = '   ';
 
@@ -40,11 +59,25 @@ function getSelectionSymbol(cell) {
   } else if (hasCurrent && !hasArea && areaLevel === undefined) {
     symbol = ' # ';
 
-  } else if (!hasCurrent && hasArea && areaLevel === undefined) {
+  } else if (
+    cell.colSpan === 1 && cell.rowSpan === 1 && !hasCurrent && hasArea && areaLevel === undefined
+  ) {
     symbol = ' 0 ';
 
-  } else if (!hasCurrent && hasArea && areaLevel) {
+  } else if (
+    cell.colSpan === 1 && cell.rowSpan === 1 && !hasCurrent && hasArea && areaLevel
+  ) {
     symbol = ` ${areaLevel} `;
+
+  } else if (
+    (cell.colSpan > 1 || cell.rowSpan > 1) && !hasCurrent && hasArea && areaLevelMergedCell === undefined
+  ) {
+    symbol = '   ';
+
+  } else if (
+    (cell.colSpan > 1 || cell.rowSpan > 1) && !hasCurrent && hasArea && areaLevelMergedCell !== undefined
+  ) {
+    symbol = ` ${areaLevelMergedCell} `;
 
   } else if (hasActiveHeader) {
     symbol = ' * ';
@@ -108,6 +141,17 @@ export function generateASCIITable(context) {
         cellElement.nodeName === 'TH' &&
         (cellElement.colSpan > 1 || cellElement.classList.contains('hiddenHeader') &&
         (!nextCellElement || nextCellElement.classList.contains('hiddenHeader')))
+      ) {
+        separatorSymbol = ' ';
+
+        if (cellElement.colSpan > 1) {
+          headerRootSymbol = symbol;
+        }
+
+      } else if (
+        cellElement.nodeName === 'TD' &&
+        (cellElement.colSpan > 1 || cellElement.style.display === 'none' &&
+        (!nextCellElement || nextCellElement.style.display === 'none'))
       ) {
         separatorSymbol = ' ';
 

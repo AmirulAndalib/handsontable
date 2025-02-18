@@ -20,6 +20,7 @@ react:
   id: 87ulwfs2
   metaTitle: Row heights - React Data Grid | Handsontable
 searchCategory: Guides
+category: Rows
 ---
 
 # Row heights
@@ -30,9 +31,9 @@ Configure row heights, using a number, an array or a function. Let your users ma
 
 ## Overview
 
-The default (and minimum) row height is 23 px (22 px + 1 px of the row's bottom border). Unless configured otherwise, Handsontable assumes that your cell contents fit in this default row height.
+The default (and minimum) row height is calculated based on the used theme's padding and border values (in the classic theme it's 23 px - 22 px + 1 px of the row's bottom border). Unless configured otherwise, Handsontable assumes that your cell contents fit in this default row height.
 
-If your cell contents require heights greater than the default 23 px (because you use multiline text, or [custom renderers](@/guides/cell-functions/cell-renderer/cell-renderer.md), or custom styles), use one of the following configurations to avoid potential layout problems:
+If your cell contents require heights greater than default (because you use multiline text, or [custom renderers](@/guides/cell-functions/cell-renderer/cell-renderer.md), or custom styles), use one of the following configurations to avoid potential layout problems:
   - Configure your row heights in advance: set the [`rowHeights`](@/api/options.md#rowheights) option to a [number](#set-row-heights-to-a-number), or an [array](#set-row-heights-with-an-array), or a [function](#set-row-heights-with-a-function). This requires you to know the heights beforehand, but results in the best runtime performance.
   - Set the [`manualRowResize`](@/api/options.md#manualrowresize) option to an array, to configure initial row heights and let your users [adjust the row heights manually](#adjust-row-heights-manually).
   - Enable the [`AutoRowSize`](@/api/autoRowSize.md) plugin, by setting `autoRowSize: true`. This tells Handsontable to measure the actual row heights in the DOM. It impacts runtime performance but is accurate.
@@ -43,9 +44,10 @@ We set the same height of `40px` for all rows across the entire grid in this exa
 
 ::: only-for javascript
 
-::: example #example1
+::: example #example1 --js 1 --ts 2
 
 @[code](@/content/guides/rows/row-height/javascript/example1.js)
+@[code](@/content/guides/rows/row-height/javascript/example1.ts)
 
 :::
 
@@ -53,9 +55,10 @@ We set the same height of `40px` for all rows across the entire grid in this exa
 
 ::: only-for react
 
-::: example #example1 :react
+::: example #example1 :react --js 1 --ts 2
 
 @[code](@/content/guides/rows/row-height/react/example1.jsx)
+@[code](@/content/guides/rows/row-height/react/example1.tsx)
 
 :::
 
@@ -67,9 +70,10 @@ In this example, the height is only set for the first rows. Each additional row 
 
 ::: only-for javascript
 
-::: example #example2
+::: example #example2 --js 1 --ts 2
 
 @[code](@/content/guides/rows/row-height/javascript/example2.js)
+@[code](@/content/guides/rows/row-height/javascript/example2.ts)
 
 :::
 
@@ -77,9 +81,10 @@ In this example, the height is only set for the first rows. Each additional row 
 
 ::: only-for react
 
-::: example #example2 :react
+::: example #example2 :react --js 1 --ts 2
 
 @[code](@/content/guides/rows/row-height/react/example2.jsx)
+@[code](@/content/guides/rows/row-height/react/example2.tsx)
 
 :::
 
@@ -91,9 +96,10 @@ The row height can be set using a function. In this example, the size of all row
 
 ::: only-for javascript
 
-::: example #example3
+::: example #example3 --js 1 --ts 2
 
 @[code](@/content/guides/rows/row-height/javascript/example3.js)
+@[code](@/content/guides/rows/row-height/javascript/example3.ts)
 
 :::
 
@@ -101,9 +107,10 @@ The row height can be set using a function. In this example, the size of all row
 
 ::: only-for react
 
-::: example #example3 :react
+::: example #example3 :react --js 1 --ts 2
 
 @[code](@/content/guides/rows/row-height/react/example3.jsx)
+@[code](@/content/guides/rows/row-height/react/example3.tsx)
 
 :::
 
@@ -117,9 +124,10 @@ You can adjust the size of one or multiple rows simultaneously, even if the sele
 
 ::: only-for javascript
 
-::: example #example4
+::: example #example4 --js 1 --ts 2
 
 @[code](@/content/guides/rows/row-height/javascript/example4.js)
+@[code](@/content/guides/rows/row-height/javascript/example4.ts)
 
 :::
 
@@ -127,9 +135,10 @@ You can adjust the size of one or multiple rows simultaneously, even if the sele
 
 ::: only-for react
 
-::: example #example4 :react
+::: example #example4 :react --js 1 --ts 2
 
 @[code](@/content/guides/rows/row-height/react/example4.jsx)
+@[code](@/content/guides/rows/row-height/react/example4.tsx)
 
 :::
 

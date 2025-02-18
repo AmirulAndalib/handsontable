@@ -5,7 +5,11 @@ metaTitle: Custom ID - Angular Data Grid | Handsontable
 description: Pass a custom ID to the "HotTable" component to further customize your Angular data grid.
 permalink: /angular-custom-id
 canonicalUrl: /angular-custom-id
+react:
+  id: 20fncs45
+  metaTitle: Custom ID - Angular Data Grid | Handsontable
 searchCategory: Guides
+category: Integrate with Angular
 ---
 
 # Custom ID in Angular

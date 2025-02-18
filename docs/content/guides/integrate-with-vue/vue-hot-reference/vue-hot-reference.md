@@ -5,7 +5,11 @@ metaTitle: Referencing Handsontable - Vue 2 Data Grid | Handsontable
 description: Reference the Handsontable instance from a Vue 2 component to programmatically perform actions such as reloading the data in your data grid.
 permalink: /vue-hot-reference
 canonicalUrl: /vue-hot-reference
+react:
+  id: xk0bot46
+  metaTitle: Referencing Handsontable - Vue 2 Data Grid | Handsontable
 searchCategory: Guides
+category: Integrate with Vue 2
 ---
 
 # Referencing the Handsontable instance in Vue 2

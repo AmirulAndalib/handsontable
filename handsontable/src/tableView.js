@@ -1,5 +1,6 @@
 import {
   addClass,
+  removeClass,
   clearTextSelection,
   empty,
   fastInnerHTML,
@@ -130,6 +131,12 @@ class TableView {
    * @type {number}
    */
   #lastHeight = 0;
+  /**
+   * The last mouse position of the mousedown event.
+   *
+   * @type {{ x: number, y: number } | null}
+   */
+  #mouseDownLastPos = null;
 
   /**
    * @param {Hanstontable} hotInstance Instance of {@link Handsontable}.
@@ -154,10 +161,13 @@ class TableView {
       if (this.postponedAdjustElementsSize) {
         this.postponedAdjustElementsSize = false;
 
-        this.adjustElementsSize(true);
+        this.adjustElementsSize();
       }
 
       this._wt.draw(!this.hot.forceFullRender);
+
+      this.#updateScrollbarClassNames();
+
       this.hot.runHooks('afterRender', this.hot.forceFullRender);
       this.hot.forceFullRender = false;
       this.hot.renderCall = false;
@@ -166,14 +176,12 @@ class TableView {
 
   /**
    * Adjust overlays elements size and master table size.
-   *
-   * @param {boolean} [force=false] When `true`, it adjust the DOM nodes sizes for all overlays.
    */
-  adjustElementsSize(force = false) {
+  adjustElementsSize() {
     if (this.hot.isRenderSuspended()) {
       this.postponedAdjustElementsSize = true;
     } else {
-      this._wt.wtOverlays.adjustElementsSize(force);
+      this._wt.wtOverlays.adjustElementsSize();
     }
   }
 
@@ -198,38 +206,43 @@ class TableView {
    * Scroll viewport to a cell.
    *
    * @param {CellCoords} coords Renderable cell coordinates.
-   * @param {boolean} [snapToTop] If `true`, viewport is scrolled to show the cell on the top of the table.
-   * @param {boolean} [snapToRight] If `true`, viewport is scrolled to show the cell on the right side of the table.
-   * @param {boolean} [snapToBottom] If `true`, viewport is scrolled to show the cell on the bottom side of the table.
-   * @param {boolean} [snapToLeft] If `true`, viewport is scrolled to show the cell on the left side of the table.
+   * @param {'auto' | 'start' | 'end'} [horizontalSnap] If `'start'`, viewport is scrolled to show
+   * the cell on the left of the table. If `'end'`, viewport is scrolled to show the cell on the right of
+   * the table. When `'auto'`, the viewport is scrolled only when the column is outside of the viewport.
+   * @param {'auto' | 'top' | 'bottom'} [verticalSnap] If `'top'`, viewport is scrolled to show
+   * the cell on the top of the table. If `'bottom'`, viewport is scrolled to show the cell on the bottom of
+   * the table. When `'auto'`, the viewport is scrolled only when the row is outside of the viewport.
    * @returns {boolean}
    */
-  scrollViewport(coords, snapToTop, snapToRight, snapToBottom, snapToLeft) {
-    return this._wt.scrollViewport(coords, snapToTop, snapToRight, snapToBottom, snapToLeft);
+  scrollViewport(coords, horizontalSnap, verticalSnap) {
+    return this._wt.scrollViewport(coords, horizontalSnap, verticalSnap);
   }
 
   /**
    * Scroll viewport to a column.
    *
    * @param {number} column Renderable column index.
-   * @param {boolean} [snapToRight] If `true`, viewport is scrolled to show the cell on the right side of the table.
-   * @param {boolean} [snapToLeft] If `true`, viewport is scrolled to show the cell on the left side of the table.
+   * @param {'auto' | 'start' | 'end'} [snap] If `'start'`, viewport is scrolled to show
+   * the cell on the left of the table. If `'end'`, viewport is scrolled to show the cell on the right of
+   * the table. When `'auto'`, the viewport is scrolled only when the column is outside of the viewport.
    * @returns {boolean}
    */
-  scrollViewportHorizontally(column, snapToRight, snapToLeft) {
-    return this._wt.scrollViewportHorizontally(column, snapToRight, snapToLeft);
+  scrollViewportHorizontally(column, snap) {
+    return this._wt.scrollViewportHorizontally(column, snap);
   }
 
   /**
    * Scroll viewport to a row.
    *
    * @param {number} row Renderable row index.
-   * @param {boolean} [snapToTop] If `true`, viewport is scrolled to show the cell on the top of the table.
-   * @param {boolean} [snapToBottom] If `true`, viewport is scrolled to show the cell on the bottom side of the table.
+   * @param {'auto' | 'top' | 'bottom'} [snap] If `'top'`, viewport is scrolled to show
+   * the cell on the top of the table. If `'bottom'`, viewport is scrolled to show the cell on
+   * the bottom of the table. When `'auto'`, the viewport is scrolled only when the row is outside of
+   * the viewport.
    * @returns {boolean}
    */
-  scrollViewportVertically(row, snapToTop, snapToBottom) {
-    return this._wt.scrollViewportVertically(row, snapToTop, snapToBottom);
+  scrollViewportVertically(row, snap) {
+    return this._wt.scrollViewportVertically(row, snap);
   }
 
   /**
@@ -364,7 +377,7 @@ class TableView {
       }
 
       // immediate click on "holder" means click on the right side of vertical scrollbar
-      const { holder } = this.hot.view._wt.wtTable;
+      const { holder } = this._wt.wtTable;
 
       if (next === holder) {
         const scrollbarWidth = getScrollbarWidth(rootDocument);
@@ -637,6 +650,52 @@ class TableView {
   }
 
   /**
+   * Retrieves the styles handler from the Walkontable instance.
+   *
+   * @returns {StylesHandler} The styles handler instance.
+   */
+  getStylesHandler() {
+    return this._wt.stylesHandler;
+  }
+
+  /**
+   * Returns the default row height.
+   *
+   * This method retrieves the default row height from the Walkontable styles handler.
+   *
+   * @returns {number} The default row height.
+   */
+  getDefaultRowHeight() {
+    return this._wt.stylesHandler.getDefaultRowHeight();
+  }
+
+  /**
+   * Add a class name to the license information element.
+   *
+   * @param {string} className The class name to add.
+   */
+  addClassNameToLicenseElement(className) {
+    const licenseInfoElement = this.hot.rootElement.parentNode?.querySelector('.hot-display-license-info');
+
+    if (licenseInfoElement) {
+      addClass(licenseInfoElement, className);
+    }
+  }
+
+  /**
+   * Remove a class name from the license information element.
+   *
+   * @param {string} className The class name to remove.
+   */
+  removeClassNameFromLicenseElement(className) {
+    const licenseInfoElement = this.hot.rootElement.parentNode?.querySelector('.hot-display-license-info');
+
+    if (licenseInfoElement) {
+      removeClass(licenseInfoElement, className);
+    }
+  }
+
+  /**
    * Checks if at least one cell than belongs to the main table is not covered by the top, left or
    * bottom overlay.
    *
@@ -664,7 +723,8 @@ class TableView {
       isDataViewInstance: () => isRootInstance(this.hot),
       preventOverflow: () => this.settings.preventOverflow,
       preventWheel: () => this.settings.preventWheel,
-      stretchH: () => this.settings.stretchH,
+      viewportColumnRenderingThreshold: () => this.settings.viewportColumnRenderingThreshold,
+      viewportRowRenderingThreshold: () => this.settings.viewportRowRenderingThreshold,
       data: (renderableRow, renderableColumn) => {
         return this.hot
           .getDataAtCell(...this.translateFromRenderableToVisualIndex(renderableRow, renderableColumn));
@@ -751,12 +811,20 @@ class TableView {
 
         return this.hot.getRowHeight(visualIndex === null ? renderedRowIndex : visualIndex);
       },
+      rowHeightByOverlayName: (renderedRowIndex, overlayType) => {
+        const visualIndex = this.hot.rowIndexMapper.getVisualFromRenderableIndex(renderedRowIndex);
+        const visualRowIndex = visualIndex === null ? renderedRowIndex : visualIndex;
+
+        return this.hot.runHooks('modifyRowHeightByOverlayName',
+          this.hot.getRowHeight(visualRowIndex), visualRowIndex, overlayType);
+      },
       cellRenderer: (renderedRowIndex, renderedColumnIndex, TD) => {
         const [visualRowIndex, visualColumnIndex] = this
           .translateFromRenderableToVisualIndex(renderedRowIndex, renderedColumnIndex);
 
         // Coords may be modified. For example, by the `MergeCells` plugin. It should affect cell value and cell meta.
-        const modifiedCellCoords = this.hot.runHooks('modifyGetCellCoords', visualRowIndex, visualColumnIndex);
+        const modifiedCellCoords = this.hot
+          .runHooks('modifyGetCellCoords', visualRowIndex, visualColumnIndex, false, 'meta');
 
         let visualRowToCheck = visualRowIndex;
         let visualColumnToCheck = visualColumnIndex;
@@ -810,6 +878,7 @@ class TableView {
 
         this.activeWt = wt;
         this.#mouseDown = true;
+        this.#mouseDownLastPos = { x: event.clientX, y: event.clientY };
 
         this.hot.runHooks('beforeOnCellMouseDown', event, visualCoords, TD, controller);
 
@@ -862,7 +931,6 @@ class TableView {
       },
       onCellMouseOver: (event, coords, TD, wt) => {
         const visualCoords = this.translateFromRenderableToVisualCoords(coords);
-
         const controller = {
           row: false,
           column: false,
@@ -876,7 +944,17 @@ class TableView {
           return;
         }
 
-        if (this.#mouseDown) {
+        // Ignore mouseover events when the mouse has not moved. This solves an issue (#dev-1479) where
+        // column resizing triggered by the long text in the cell causes the mouseover event to be fired,
+        // thus selecting multiple cells with no user intention.
+        if (
+          this.#mouseDown &&
+          (
+            !this.#mouseDownLastPos ||
+            this.#mouseDownLastPos.x !== event.clientX ||
+            this.#mouseDownLastPos.y !== event.clientY
+          )
+        ) {
           handleMouseEvent(event, {
             coords: visualCoords,
             selection: this.hot.selection,
@@ -887,6 +965,7 @@ class TableView {
 
         this.hot.runHooks('afterOnCellMouseOver', event, visualCoords, TD);
         this.activeWt = this._wt;
+        this.#mouseDownLastPos = null;
       },
       onCellMouseUp: (event, coords, TD, wt) => {
         const visualCoords = this.translateFromRenderableToVisualCoords(coords);
@@ -915,7 +994,7 @@ class TableView {
       },
       beforeDraw: (force, skipRender) => this.beforeRender(force, skipRender),
       onDraw: force => this.afterRender(force),
-      onBeforeViewportScrollVertically: (renderableRow) => {
+      onBeforeViewportScrollVertically: (renderableRow, snapping) => {
         const rowMapper = this.hot.rowIndexMapper;
         const areColumnHeadersSelected = renderableRow < 0;
         let visualRow = renderableRow;
@@ -929,7 +1008,7 @@ class TableView {
           }
         }
 
-        visualRow = this.hot.runHooks('beforeViewportScrollVertically', visualRow);
+        visualRow = this.hot.runHooks('beforeViewportScrollVertically', visualRow, snapping);
         this.hot.runHooks('beforeViewportScroll');
 
         if (!areColumnHeadersSelected) {
@@ -938,7 +1017,7 @@ class TableView {
 
         return visualRow;
       },
-      onBeforeViewportScrollHorizontally: (renderableColumn) => {
+      onBeforeViewportScrollHorizontally: (renderableColumn, snapping) => {
         const columnMapper = this.hot.columnIndexMapper;
         const areRowHeadersSelected = renderableColumn < 0;
         let visualColumn = renderableColumn;
@@ -952,7 +1031,7 @@ class TableView {
           }
         }
 
-        visualColumn = this.hot.runHooks('beforeViewportScrollHorizontally', visualColumn);
+        visualColumn = this.hot.runHooks('beforeViewportScrollHorizontally', visualColumn, snapping);
         this.hot.runHooks('beforeViewportScroll');
 
         if (!areRowHeadersSelected) {
@@ -1021,8 +1100,8 @@ class TableView {
           ];
         }
 
-        return this.hot
-          .runHooks('afterDrawSelection', visualRowIndex, visualColumnIndex, cornersOfSelection, layerLevel);
+        return this.hot.runHooks('afterDrawSelection',
+          visualRowIndex, visualColumnIndex, cornersOfSelection, layerLevel);
       },
       onBeforeDrawBorders: (corners, borderClassName) => {
         const [startRenderableRow, startRenderableColumn, endRenderableRow, endRenderableColumn] = corners;
@@ -1037,13 +1116,8 @@ class TableView {
       },
       onBeforeTouchScroll: () => this.hot.runHooks('beforeTouchScroll'),
       onAfterMomentumScroll: () => this.hot.runHooks('afterMomentumScroll'),
-      onBeforeStretchingColumnWidth: (stretchedWidth, renderedColumnIndex) => {
-        const visualColumnIndex = this.hot.columnIndexMapper.getVisualFromRenderableIndex(renderedColumnIndex);
-
-        return this.hot.runHooks('beforeStretchingColumnWidth', stretchedWidth, visualColumnIndex);
-      },
       onModifyRowHeaderWidth: rowHeaderWidth => this.hot.runHooks('modifyRowHeaderWidth', rowHeaderWidth),
-      onModifyGetCellCoords: (renderableRowIndex, renderableColumnIndex, topmost) => {
+      onModifyGetCellCoords: (renderableRowIndex, renderableColumnIndex, topmost, source) => {
         const rowMapper = this.hot.rowIndexMapper;
         const columnMapper = this.hot.columnIndexMapper;
 
@@ -1053,7 +1127,8 @@ class TableView {
         const visualRowIndex = renderableRowIndex >= 0 ?
           rowMapper.getVisualFromRenderableIndex(renderableRowIndex) : renderableRowIndex;
 
-        const visualIndexes = this.hot.runHooks('modifyGetCellCoords', visualRowIndex, visualColumnIndex, topmost);
+        const visualIndexes = this.hot
+          .runHooks('modifyGetCellCoords', visualRowIndex, visualColumnIndex, topmost, source);
 
         if (Array.isArray(visualIndexes)) {
           const [visualRowFrom, visualColumnFrom, visualRowTo, visualColumnTo] = visualIndexes;
@@ -1068,6 +1143,28 @@ class TableView {
               rowMapper.getNearestNotHiddenIndex(visualRowTo, -1)) : visualRowTo,
             visualColumnTo >= 0 ? columnMapper.getRenderableFromVisualIndex(
               columnMapper.getNearestNotHiddenIndex(visualColumnTo, -1)) : visualColumnTo
+          ];
+        }
+      },
+      onModifyGetCoordsElement: (renderableRowIndex, renderableColumnIndex) => {
+        const rowMapper = this.hot.rowIndexMapper;
+        const columnMapper = this.hot.columnIndexMapper;
+
+        const visualColumnIndex = renderableColumnIndex >= 0 ?
+          columnMapper.getVisualFromRenderableIndex(renderableColumnIndex) : renderableColumnIndex;
+        const visualRowIndex = renderableRowIndex >= 0 ?
+          rowMapper.getVisualFromRenderableIndex(renderableRowIndex) : renderableRowIndex;
+
+        const visualIndexes = this.hot.runHooks('modifyGetCoordsElement', visualRowIndex, visualColumnIndex);
+
+        if (Array.isArray(visualIndexes)) {
+          const [visualRow, visualColumn] = visualIndexes;
+
+          return [
+            visualRow >= 0 ? rowMapper.getRenderableFromVisualIndex(
+              rowMapper.getNearestNotHiddenIndex(visualRow, 1)) : visualRow,
+            visualColumn >= 0 ? columnMapper.getRenderableFromVisualIndex(
+              columnMapper.getNearestNotHiddenIndex(visualColumn, 1)) : visualColumn,
           ];
         }
       },
@@ -1088,7 +1185,7 @@ class TableView {
             calc.endRow = Math.min(lastRenderedRow + viewportOffset, renderableRows - 1);
 
           } else if (viewportOffset === 'auto') {
-            const offset = Math.ceil(lastRenderedRow / renderableRows * 12);
+            const offset = Math.max(1, Math.ceil(lastRenderedRow / renderableRows * 12));
 
             calc.startRow = Math.max(firstRenderedRow - offset, 0);
             calc.endRow = Math.min(lastRenderedRow + offset, renderableRows - 1);
@@ -1113,7 +1210,7 @@ class TableView {
             calc.endColumn = Math.min(lastRenderedColumn + viewportOffset, renderableColumns - 1);
           }
           if (viewportOffset === 'auto') {
-            const offset = Math.ceil(lastRenderedColumn / renderableColumns * 6);
+            const offset = Math.max(1, Math.ceil(lastRenderedColumn / renderableColumns * 6));
 
             calc.startColumn = Math.max(firstRenderedColumn - offset, 0);
             calc.endColumn = Math.min(lastRenderedColumn + offset, renderableColumns - 1);
@@ -1175,7 +1272,7 @@ class TableView {
     if (isInput(el)) {
       return true;
     }
-    const isChildOfTableBody = isChildOf(el, this.hot.view._wt.wtTable.spreader);
+    const isChildOfTableBody = isChildOf(el, this._wt.wtTable.spreader);
 
     if (this.settings.fragmentSelection === true && isChildOfTableBody) {
       return true;
@@ -1298,12 +1395,29 @@ class TableView {
    * @param {number} [headerLevel=0] The index of header level counting from the top (positive
    *                                 values counting from 0 to N).
    */
-  appendColHeader(visualColumnIndex, TH, label = this.hot.getColHeader, headerLevel = 0) {
+  appendColHeader(
+    visualColumnIndex,
+    TH,
+    label = this.hot.getColHeader,
+    headerLevel = 0
+  ) {
+    const getColumnHeaderClassNames = () => {
+      const metaHeaderClassNames =
+        visualColumnIndex >= 0 ?
+          this.hot.getColumnMeta(visualColumnIndex).headerClassName :
+          null;
+
+      return metaHeaderClassNames ? metaHeaderClassNames.split(' ') : [];
+    };
+
     if (TH.firstChild) {
       const container = TH.firstChild;
 
       if (hasClass(container, 'relative')) {
         this.updateCellHeader(container.querySelector('.colHeader'), visualColumnIndex, label, headerLevel);
+
+        container.className = '';
+        addClass(container, ['relative', ...getColumnHeaderClassNames()]);
 
       } else {
         empty(TH);
@@ -1314,8 +1428,9 @@ class TableView {
       const { rootDocument } = this.hot;
       const div = rootDocument.createElement('div');
       const span = rootDocument.createElement('span');
+      const classNames = getColumnHeaderClassNames();
 
-      div.className = 'relative';
+      div.classList.add('relative', ...classNames);
       span.className = 'colHeader';
 
       if (this.settings.ariaTags) {
@@ -1420,83 +1535,159 @@ class TableView {
   }
 
   /**
-   * Returns the first fully visible row in the table viewport.
+   * Returns the first rendered row in the DOM (usually is not visible in the table's viewport).
+   *
+   * @returns {number | null}
+   */
+  getFirstRenderedVisibleRow() {
+    if (!this._wt.wtViewport.rowsRenderCalculator) {
+      return null;
+    }
+
+    const indexMapper = this.hot.rowIndexMapper;
+    const visualRowIndex = indexMapper
+      .getVisualFromRenderableIndex(this._wt.wtTable.getFirstRenderedRow());
+
+    return indexMapper.getNearestNotHiddenIndex(visualRowIndex ?? 0, 1);
+  }
+
+  /**
+   * Returns the last rendered row in the DOM (usually is not visible in the table's viewport).
+   *
+   * @returns {number | null}
+   */
+  getLastRenderedVisibleRow() {
+    if (!this._wt.wtViewport.rowsRenderCalculator) {
+      return null;
+    }
+
+    const indexMapper = this.hot.rowIndexMapper;
+    const visualRowIndex = indexMapper
+      .getVisualFromRenderableIndex(this._wt.wtTable.getLastRenderedRow());
+
+    return indexMapper.getNearestNotHiddenIndex(visualRowIndex ?? this.hot.countRows() - 1, -1);
+  }
+
+  /**
+   * Returns the first rendered column in the DOM (usually is not visible in the table's viewport).
+   *
+   * @returns {number | null}
+   */
+  getFirstRenderedVisibleColumn() {
+    if (!this._wt.wtViewport.columnsRenderCalculator) {
+      return null;
+    }
+
+    const indexMapper = this.hot.columnIndexMapper;
+    const visualColumnIndex = indexMapper
+      .getVisualFromRenderableIndex(this._wt.wtTable.getFirstRenderedColumn());
+
+    return indexMapper.getNearestNotHiddenIndex(visualColumnIndex ?? 0, 1);
+  }
+
+  /**
+   * Returns the last rendered column in the DOM (usually is not visible in the table's viewport).
+   *
+   * @returns {number | null}
+   */
+  getLastRenderedVisibleColumn() {
+    if (!this._wt.wtViewport.columnsRenderCalculator) {
+      return null;
+    }
+
+    const indexMapper = this.hot.columnIndexMapper;
+    const visualColumnIndex = indexMapper
+      .getVisualFromRenderableIndex(this._wt.wtTable.getLastRenderedColumn());
+
+    return indexMapper.getNearestNotHiddenIndex(visualColumnIndex ?? this.hot.countCols() - 1, -1);
+  }
+
+  /**
+   * Returns the first fully visible row in the table viewport. When the table has overlays the method returns
+   * the first row of the master table that is not overlapped by overlay.
    *
    * @returns {number}
    */
   getFirstFullyVisibleRow() {
     return this.hot.rowIndexMapper
-      .getVisualFromRenderableIndex(this.hot.view._wt.wtScroll.getFirstVisibleRow());
+      .getVisualFromRenderableIndex(this._wt.wtScroll.getFirstVisibleRow());
   }
 
   /**
-   * Returns the last fully visible row in the table viewport.
+   * Returns the last fully visible row in the table viewport. When the table has overlays the method returns
+   * the first row of the master table that is not overlapped by overlay.
    *
    * @returns {number}
    */
   getLastFullyVisibleRow() {
     return this.hot.rowIndexMapper
-      .getVisualFromRenderableIndex(this.hot.view._wt.wtScroll.getLastVisibleRow());
+      .getVisualFromRenderableIndex(this._wt.wtScroll.getLastVisibleRow());
   }
 
   /**
-   * Returns the first fully visible column in the table viewport.
+   * Returns the first fully visible column in the table viewport. When the table has overlays the method returns
+   * the first row of the master table that is not overlapped by overlay.
    *
    * @returns {number}
    */
   getFirstFullyVisibleColumn() {
     return this.hot.columnIndexMapper
-      .getVisualFromRenderableIndex(this.hot.view._wt.wtScroll.getFirstVisibleColumn());
+      .getVisualFromRenderableIndex(this._wt.wtScroll.getFirstVisibleColumn());
   }
 
   /**
-   * Returns the last fully visible column in the table viewport.
+   * Returns the last fully visible column in the table viewport. When the table has overlays the method returns
+   * the first row of the master table that is not overlapped by overlay.
    *
    * @returns {number}
    */
   getLastFullyVisibleColumn() {
     return this.hot.columnIndexMapper
-      .getVisualFromRenderableIndex(this.hot.view._wt.wtScroll.getLastVisibleColumn());
+      .getVisualFromRenderableIndex(this._wt.wtScroll.getLastVisibleColumn());
   }
 
   /**
-   * Returns the first partially visible row in the table viewport.
+   * Returns the first partially visible row in the table viewport. When the table has overlays the method returns
+   * the first row of the master table that is not overlapped by overlay.
    *
    * @returns {number}
    */
   getFirstPartiallyVisibleRow() {
     return this.hot.rowIndexMapper
-      .getVisualFromRenderableIndex(this.hot.view._wt.wtScroll.getFirstPartiallyVisibleRow());
+      .getVisualFromRenderableIndex(this._wt.wtScroll.getFirstPartiallyVisibleRow());
   }
 
   /**
-   * Returns the last partially visible row in the table viewport.
+   * Returns the last partially visible row in the table viewport. When the table has overlays the method returns
+   * the first row of the master table that is not overlapped by overlay.
    *
    * @returns {number}
    */
   getLastPartiallyVisibleRow() {
     return this.hot.rowIndexMapper
-      .getVisualFromRenderableIndex(this.hot.view._wt.wtScroll.getLastPartiallyVisibleRow());
+      .getVisualFromRenderableIndex(this._wt.wtScroll.getLastPartiallyVisibleRow());
   }
 
   /**
-   * Returns the first partially visible column in the table viewport.
+   * Returns the first partially visible column in the table viewport. When the table has overlays the method returns
+   * the first row of the master table that is not overlapped by overlay.
    *
    * @returns {number}
    */
   getFirstPartiallyVisibleColumn() {
     return this.hot.columnIndexMapper
-      .getVisualFromRenderableIndex(this.hot.view._wt.wtScroll.getFirstPartiallyVisibleColumn());
+      .getVisualFromRenderableIndex(this._wt.wtScroll.getFirstPartiallyVisibleColumn());
   }
 
   /**
-   * Returns the last partially visible column in the table viewport.
+   * Returns the last partially visible column in the table viewport. When the table has overlays the method returns
+   * the first row of the master table that is not overlapped by overlay.
    *
    * @returns {number}
    */
   getLastPartiallyVisibleColumn() {
     return this.hot.columnIndexMapper
-      .getVisualFromRenderableIndex(this.hot.view._wt.wtScroll.getLastPartiallyVisibleColumn());
+      .getVisualFromRenderableIndex(this._wt.wtScroll.getLastPartiallyVisibleColumn());
   }
 
   /**
@@ -1525,7 +1716,7 @@ class TableView {
    * @returns {number}
    */
   getViewportWidth() {
-    return this.hot.view._wt.wtViewport.getViewportWidth();
+    return this._wt.wtViewport.getViewportWidth();
   }
 
   /**
@@ -1534,7 +1725,7 @@ class TableView {
    * @returns {number}
    */
   getWorkspaceWidth() {
-    return this.hot.view._wt.wtViewport.getWorkspaceWidth();
+    return this._wt.wtViewport.getWorkspaceWidth();
   }
 
   /**
@@ -1545,7 +1736,7 @@ class TableView {
    * @returns {number}
    */
   getViewportHeight() {
-    return this.hot.view._wt.wtViewport.getViewportHeight();
+    return this._wt.wtViewport.getViewportHeight();
   }
 
   /**
@@ -1554,7 +1745,120 @@ class TableView {
    * @returns {number}
    */
   getWorkspaceHeight() {
-    return this.hot.view._wt.wtViewport.getWorkspaceHeight();
+    return this._wt.wtViewport.getWorkspaceHeight();
+  }
+
+  /**
+   * Checks to what overlay the provided element belongs.
+   *
+   * @param {HTMLElement} element The DOM element to check.
+   * @returns {'master'|'inline_start'|'top'|'top_inline_start_corner'|'bottom'|'bottom_inline_start_corner'}
+   */
+  getElementOverlayName(element) {
+    return (this._wt.wtOverlays.getParentOverlay(element) ?? this._wt).wtTable.name;
+  }
+
+  /**
+   * Gets the overlay instance by its name.
+   *
+   * @param {'inline_start'|'top'|'top_inline_start_corner'|'bottom'|'bottom_inline_start_corner'} overlayName The overlay name.
+   * @returns {Overlay | null}
+   */
+  getOverlayByName(overlayName) {
+    return this._wt.getOverlayByName(overlayName);
+  }
+
+  /**
+   * Gets the name of the overlay that currently renders the table. If the method is called out of the render cycle
+   * the 'master' name is returned.
+   *
+   * @returns {string}
+   */
+  getActiveOverlayName() {
+    return this._wt.activeOverlayName;
+  }
+
+  /**
+   * Checks if the table is visible or not.
+   *
+   * @returns {boolean}
+   */
+  isVisible() {
+    return this._wt.wtTable.isVisible();
+  }
+
+  /**
+   * Checks if the table has a horizontal scrollbar.
+   *
+   * @returns {boolean}
+   */
+  hasVerticalScroll() {
+    return this._wt.wtViewport.hasVerticalScroll();
+  }
+
+  /**
+   * Checks if the table has a vertical scrollbar.
+   *
+   * @returns {boolean}
+   */
+  hasHorizontalScroll() {
+    return this._wt.wtViewport.hasHorizontalScroll();
+  }
+
+  /**
+   * Gets the table's width.
+   *
+   * @returns {boolean}
+   */
+  getTableWidth() {
+    return this._wt.wtTable.getWidth();
+  }
+
+  /**
+   * Gets the table's height.
+   *
+   * @returns {boolean}
+   */
+  getTableHeight() {
+    return this._wt.wtTable.getHeight();
+  }
+
+  /**
+   * Gets the row header width. If there are multiple row headers, the width of
+   * the sum of all of them is returned.
+   *
+   * @returns {number}
+   */
+  getRowHeaderWidth() {
+    return this._wt.wtViewport.getRowHeaderWidth();
+  }
+
+  /**
+   * Gets the column header height. If there are multiple column headers, the height
+   * of the sum of all of them is returned.
+   *
+   * @returns {number}
+   */
+  getColumnHeaderHeight() {
+    return this._wt.wtViewport.getColumnHeaderHeight();
+  }
+
+  /**
+   * Checks if the table uses the window as a viewport and if there is a vertical scrollbar.
+   *
+   * @returns {boolean}
+   */
+  isVerticallyScrollableByWindow() {
+    return this._wt.wtViewport.isVerticallyScrollableByWindow();
+  }
+
+  /**
+   * Checks if the table uses the window as a viewport and if there is a horizontal scrollbar.
+   *
+   * @returns {boolean}
+   */
+  isHorizontallyScrollableByWindow() {
+    return this._wt.wtViewport.isHorizontallyScrollableByWindow();
   }
 
   /**
@@ -1575,6 +1879,29 @@ class TableView {
     const colCount = this.#getAriaColcount() + delta;
 
     setAttribute(this.hot.rootElement, ...A11Y_COLCOUNT(colCount));
+  }
+
+  /**
+   * Updates the class names on the root element based on the presence of scrollbars.
+   *
+   * This method checks if the table has vertical and/or horizontal scrollbars and
+   * adds or removes the corresponding class names (`htHasScrollY` and `htHasScrollX`)
+   * to/from the root element.
+   */
+  #updateScrollbarClassNames() {
+    const rootElement = this.hot.rootElement;
+
+    if (this.hasVerticalScroll()) {
+      addClass(rootElement, 'htHasScrollY');
+    } else {
+      removeClass(rootElement, 'htHasScrollY');
+    }
+
+    if (this.hasHorizontalScroll()) {
+      addClass(rootElement, 'htHasScrollX');
+    } else {
+      removeClass(rootElement, 'htHasScrollX');
+    }
   }
 
   /**

@@ -68,6 +68,34 @@ describe('Focus handling', () => {
       ));
     });
 
+    it('should focus the correct TD element after changing the focus position within a range', () => {
+      const hot = handsontable({
+        data: createSpreadsheetData(10, 10),
+        navigableHeaders: true,
+        rowHeaders: true,
+        colHeaders: true
+      });
+
+      expect(document.activeElement).toEqual(document.body);
+
+      selectCells([[1, 1, 3, 3]]);
+      hot.selection.setRangeFocus(cellCoords(2, 2));
+
+      expect(document.activeElement).toEqual(getCell(
+        getSelectedRangeLast().highlight.row,
+        getSelectedRangeLast().highlight.col,
+        true
+      ));
+
+      hot.selection.transformFocus(1, 1);
+
+      expect(document.activeElement).toEqual(getCell(
+        getSelectedRangeLast().highlight.row,
+        getSelectedRangeLast().highlight.col,
+        true
+      ));
+    });
+
     it('should correctly focus the cell element that was previously not rendered in the viewport', async() => {
       handsontable({
         data: createSpreadsheetData(100, 50),
@@ -260,6 +288,35 @@ describe('Focus handling', () => {
       await sleep(defaultDelay);
 
       expect(document.activeElement).toEqual(getActiveEditor().TEXTAREA);
+    });
+
+    it('should not throw an error after scrolling the viewport (#dev-2163)', async() => {
+      const spy = jasmine.createSpyObj('error', ['test']);
+      const prevError = window.onerror;
+
+      window.onerror = function() {
+        spy.test();
+
+        return true;
+      };
+
+      handsontable({
+        data: createSpreadsheetData(100, 100),
+        colHeaders: true,
+        width: 100,
+        height: 100,
+        imeFastEdit: true,
+      });
+
+      selectColumns(0);
+      scrollViewportTo({ row: 99 });
+      selectColumns(90);
+
+      await sleep(50);
+
+      expect(spy.test.calls.count()).toBe(0);
+
+      window.onerror = prevError;
     });
   });
 });

@@ -59,22 +59,22 @@ describe('HiddenRows', () => {
       expect(getPlugin('hiddenRows').isHidden(3)).toBeTruthy();
       expect(extractDOMStructure(getMaster())).toMatchHTML(`
         <tbody>
-          <tr>
+          <tr class="ht__row_odd">
             <th class="">1</th>
             <td class="">A3</td>
             <td class="">B3</td>
           </tr>
-          <tr>
+          <tr class="ht__row_even">
             <th class="">2</th>
             <td class="">A4</td>
             <td class="">B4</td>
           </tr>
-          <tr>
+          <tr class="ht__row_odd">
             <th class="${CSS_CLASS_BEFORE_HIDDEN_ROW}">3</th>
             <td class="">A5</td>
             <td class="">B5</td>
           </tr>
-          <tr>
+          <tr class="ht__row_even">
             <th class="${CSS_CLASS_AFTER_HIDDEN_ROW}">5</th>
             <td class="${CSS_CLASS_AFTER_HIDDEN_ROW}">A2</td>
             <td class="${CSS_CLASS_AFTER_HIDDEN_ROW}">B2</td>
@@ -108,22 +108,22 @@ describe('HiddenRows', () => {
       expect(getPlugin('hiddenRows').isHidden(1)).toBeTruthy();
       expect(extractDOMStructure(getMaster())).toMatchHTML(`
         <tbody>
-          <tr>
+          <tr class="ht__row_odd">
             <th class="${CSS_CLASS_BEFORE_HIDDEN_ROW}">1</th>
             <td class="">A4</td>
             <td class="">B4</td>
           </tr>
-          <tr>
+          <tr class="ht__row_even">
             <th class="${CSS_CLASS_AFTER_HIDDEN_ROW}">3</th>
             <td class="${CSS_CLASS_AFTER_HIDDEN_ROW}">A1</td>
             <td class="${CSS_CLASS_AFTER_HIDDEN_ROW}">B1</td>
           </tr>
-          <tr>
+          <tr class="ht__row_odd">
             <th class="">4</th>
             <td class="">A2</td>
             <td class="">B2</td>
           </tr>
-          <tr>
+          <tr class="ht__row_even">
             <th class="">5</th>
             <td class="">A3</td>
             <td class="">B3</td>
@@ -157,22 +157,22 @@ describe('HiddenRows', () => {
       expect(getPlugin('hiddenRows').isHidden(1)).toBeTruthy();
       expect(extractDOMStructure(getMaster())).toMatchHTML(`
         <tbody>
-          <tr>
+          <tr class="ht__row_odd">
             <th class="${CSS_CLASS_BEFORE_HIDDEN_ROW}">1</th>
             <td class="">A1</td>
             <td class="">B1</td>
           </tr>
-          <tr>
+          <tr class="ht__row_even">
             <th class="${CSS_CLASS_AFTER_HIDDEN_ROW}">3</th>
             <td class="${CSS_CLASS_AFTER_HIDDEN_ROW}">A2</td>
             <td class="${CSS_CLASS_AFTER_HIDDEN_ROW}">B2</td>
           </tr>
-          <tr>
+          <tr class="ht__row_odd">
             <th class="">4</th>
             <td class="">A3</td>
             <td class="">B3</td>
           </tr>
-          <tr>
+          <tr class="ht__row_even">
             <th class="">5</th>
             <td class="">A4</td>
             <td class="">B4</td>
@@ -206,22 +206,22 @@ describe('HiddenRows', () => {
       expect(getPlugin('hiddenRows').isHidden(2)).toBeTruthy();
       expect(extractDOMStructure(getMaster())).toMatchHTML(`
         <tbody>
-          <tr>
+          <tr class="ht__row_odd">
             <th class="">1</th>
             <td class="">A1</td>
             <td class="">B1</td>
           </tr>
-          <tr>
+          <tr class="ht__row_even">
             <th class="${CSS_CLASS_BEFORE_HIDDEN_ROW}">2</th>
             <td class="">A3</td>
             <td class="">B3</td>
           </tr>
-          <tr>
+          <tr class="ht__row_odd">
             <th class="${CSS_CLASS_AFTER_HIDDEN_ROW}">4</th>
             <td class="${CSS_CLASS_AFTER_HIDDEN_ROW}">A5</td>
             <td class="${CSS_CLASS_AFTER_HIDDEN_ROW}">B5</td>
           </tr>
-          <tr>
+          <tr class="ht__row_even">
             <th class="">5</th>
             <td class="">A2</td>
             <td class="">B2</td>
@@ -259,12 +259,12 @@ describe('HiddenRows', () => {
       expect(getPlugin('hiddenRows').isHidden(3)).toBeTruthy();
       expect(extractDOMStructure(getMaster())).toMatchHTML(`
         <tbody>
-          <tr>
+          <tr class="ht__row_odd">
             <th class="${CSS_CLASS_BEFORE_HIDDEN_ROW}">1</th>
             <td class="">A1</td>
             <td class="">B1</td>
           </tr>
-          <tr>
+          <tr class="ht__row_even">
             <th class="${CSS_CLASS_AFTER_HIDDEN_ROW}">5</th>
             <td class="${CSS_CLASS_AFTER_HIDDEN_ROW}">A5</td>
             <td class="${CSS_CLASS_AFTER_HIDDEN_ROW}">B5</td>
@@ -302,12 +302,12 @@ describe('HiddenRows', () => {
       expect(getPlugin('hiddenRows').isHidden(3)).toBeTruthy();
       expect(extractDOMStructure(getMaster())).toMatchHTML(`
         <tbody>
-          <tr>
+          <tr class="ht__row_odd">
             <th class="${CSS_CLASS_AFTER_HIDDEN_ROW} ${CSS_CLASS_BEFORE_HIDDEN_ROW}">3</th>
             <td class="${CSS_CLASS_AFTER_HIDDEN_ROW}">A1</td>
             <td class="${CSS_CLASS_AFTER_HIDDEN_ROW}">B1</td>
           </tr>
-          <tr>
+          <tr class="ht__row_even">
             <th class="${CSS_CLASS_AFTER_HIDDEN_ROW}">5</th>
             <td class="${CSS_CLASS_AFTER_HIDDEN_ROW}">A3</td>
             <td class="${CSS_CLASS_AFTER_HIDDEN_ROW}">B3</td>
@@ -385,7 +385,10 @@ describe('HiddenRows', () => {
           const $backlight = spec().$container.find('.ht__manualRowMove--backlight');
 
           expect($backlight.offset().top).toBe($headerTH.offset().top);
-          expect($backlight.height()).toBe(23);
+          expect($backlight.height()).forThemes(({ classic, main }) => {
+            classic.toBe(23);
+            main.toBe(29);
+          });
         });
 
         it('should get correct position and size while grabing the multiple rows placed after hidden rows', () => {
@@ -416,7 +419,10 @@ describe('HiddenRows', () => {
           const $backlight = spec().$container.find('.ht__manualRowMove--backlight');
 
           expect($backlight.offset().top).toBe($firstHeaderTH.offset().top);
-          expect($backlight.height()).toBe(69); // 23 * 3
+          expect($backlight.height()).forThemes(({ classic, main }) => {
+            classic.toBe(69); // 23 * 3
+            main.toBe(87); // 29 * 3
+          });
         });
 
         it('should get correct position and size while grabing the row placed before hidden rows', () => {
@@ -439,7 +445,10 @@ describe('HiddenRows', () => {
           const $backlight = spec().$container.find('.ht__manualRowMove--backlight');
 
           expect($backlight.offset().top).toBe($headerTH.offset().top);
-          expect($backlight.height()).toBe(23);
+          expect($backlight.height()).forThemes(({ classic, main }) => {
+            classic.toBe(23);
+            main.toBe(29);
+          });
         });
 
         it('should get correct position and size while grabing the multiple rows placed before hidden rows', () => {
@@ -470,7 +479,10 @@ describe('HiddenRows', () => {
           const $backlight = spec().$container.find('.ht__manualRowMove--backlight');
 
           expect($backlight.offset().top).toBe($firstHeaderTH.offset().top);
-          expect($backlight.height()).toBe(69); // 23 * 3
+          expect($backlight.height()).forThemes(({ classic, main }) => {
+            classic.toBe(69); // 23 * 3
+            main.toBe(87); // 29 * 3
+          });
         });
       });
 
@@ -504,7 +516,10 @@ describe('HiddenRows', () => {
 
           const $guideline = spec().$container.find('.ht__manualRowMove--guideline');
 
-          expect($guideline.offset().top).toBe($secondHeaderTH.offset().top - 2);
+          expect($guideline.offset().top).forThemes(({ classic, main }) => {
+            classic.toBe($secondHeaderTH.offset().top - 2);
+            main.toBe($secondHeaderTH.offset().top - 1.5);
+          });
         });
 
         it('should get correct position while grabing the row placed after hidden rows (moving up)', () => {
@@ -535,7 +550,10 @@ describe('HiddenRows', () => {
 
           const $guideline = spec().$container.find('.ht__manualRowMove--guideline');
 
-          expect($guideline.offset().top).toBe($firstHeaderTH.offset().top + $firstHeaderTH.height() - 1);
+          expect($guideline.offset().top).forThemes(({ classic, main }) => {
+            classic.toBe($firstHeaderTH.offset().top + $firstHeaderTH.height() - 1);
+            main.toBe($firstHeaderTH.offset().top + $firstHeaderTH.height() - 0.5);
+          });
         });
 
         it('should get correct position while grabing the row placed before hidden rows (moving down)', () => {
@@ -567,7 +585,10 @@ describe('HiddenRows', () => {
 
           const $guideline = spec().$container.find('.ht__manualRowMove--guideline');
 
-          expect($guideline.offset().top).toBe($secondHeaderTH.offset().top - 2);
+          expect($guideline.offset().top).forThemes(({ classic, main }) => {
+            classic.toBe($secondHeaderTH.offset().top - 2);
+            main.toBe($secondHeaderTH.offset().top - 1.5);
+          });
         });
 
         it('should get correct position while grabing the row placed before hidden rows (moving up)', () => {
@@ -598,7 +619,10 @@ describe('HiddenRows', () => {
 
           const $guideline = spec().$container.find('.ht__manualRowMove--guideline');
 
-          expect($guideline.offset().top).toBe($firstHeaderTH.offset().top + $firstHeaderTH.height() - 1);
+          expect($guideline.offset().top).forThemes(({ classic, main }) => {
+            classic.toBe($firstHeaderTH.offset().top + $firstHeaderTH.height() - 1);
+            main.toBe($firstHeaderTH.offset().top + $firstHeaderTH.height() - 0.5);
+          });
         });
       });
     });

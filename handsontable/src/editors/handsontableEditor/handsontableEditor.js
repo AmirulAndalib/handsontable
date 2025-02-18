@@ -4,7 +4,7 @@ import {
   stopImmediatePropagation,
 } from '../../helpers/dom/event';
 import { extend } from '../../helpers/object';
-import { SHORTCUTS_GROUP_NAVIGATION } from '../../editorManager';
+import { EDITOR_EDIT_GROUP } from '../../shortcutContexts';
 
 const SHORTCUTS_GROUP = 'handsontableEditor';
 
@@ -25,12 +25,17 @@ export class HandsontableEditor extends TextEditor {
   open() {
     super.open();
 
+    const containerStyle = this.htContainer.style;
+
     if (this.htEditor) {
       this.htEditor.destroy();
+      containerStyle.width = '';
+      containerStyle.height = '';
+      containerStyle.overflow = '';
     }
 
-    if (this.htContainer.style.display === 'none') {
-      this.htContainer.style.display = '';
+    if (containerStyle.display === 'none') {
+      containerStyle.display = '';
     }
 
     // Constructs and initializes a new Handsontable instance
@@ -45,6 +50,12 @@ export class HandsontableEditor extends TextEditor {
     }
 
     setCaretPosition(this.TEXTAREA, 0, this.TEXTAREA.value.length);
+
+    this.htEditor.updateSettings({
+      width: this.getWidth(),
+      height: this.getHeight(),
+    });
+
     this.refreshDimensions();
   }
 
@@ -88,6 +99,7 @@ export class HandsontableEditor extends TextEditor {
       autoWrapCol: false,
       autoWrapRow: false,
       ariaTags: false,
+      themeName: this.hot.getCurrentThemeName(),
       afterOnCellMouseDown(_, coords) {
         const sourceValue = this.getSourceData(coords.row, coords.col);
 
@@ -162,14 +174,38 @@ export class HandsontableEditor extends TextEditor {
   }
 
   /**
+   * Calculates and return the internal Handsontable's height.
+   *
+   * @private
+   * @returns {number}
+   */
+  getHeight() {
+    return this.htEditor.view.getTableHeight() + 1;
+  }
+
+  /**
+   * Calculates and return the internal Handsontable's width.
+   *
+   * @private
+   * @returns {number}
+   */
+  getWidth() {
+    return this.htEditor.view.getTableWidth();
+  }
+
+  /**
    * Assigns afterDestroy callback to prevent memory leaks.
    *
    * @private
    */
   assignHooks() {
     this.hot.addHook('afterDestroy', () => {
-      if (this.htEditor) {
-        this.htEditor.destroy();
+      this.htEditor?.destroy();
+    });
+
+    this.hot.addHook('afterSetTheme', (themeName, firstRun) => {
+      if (!firstRun) {
+        this.htEditor?.useTheme(themeName);
       }
     });
   }
@@ -187,7 +223,7 @@ export class HandsontableEditor extends TextEditor {
 
     const contextConfig = {
       group: SHORTCUTS_GROUP,
-      relativeToGroup: SHORTCUTS_GROUP_NAVIGATION,
+      relativeToGroup: EDITOR_EDIT_GROUP,
       position: 'before',
     };
 

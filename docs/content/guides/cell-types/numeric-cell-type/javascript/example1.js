@@ -1,13 +1,15 @@
 import Handsontable from 'handsontable';
 import numbro from 'numbro';
 import deDE from 'numbro/languages/de-DE';
-import 'handsontable/dist/handsontable.full.min.css';
+import 'handsontable/styles/handsontable.css';
+import 'handsontable/styles/ht-theme-main.css';
 
 // register the languages you need
 numbro.registerLanguage(deDE);
 
 const container = document.querySelector('#example1');
-const hot = new Handsontable(container, {
+
+new Handsontable(container, {
   data: [
     { car: 'Mercedes A 160', year: 2017, price_usd: 7000, price_eur: 7000 },
     { car: 'Citroen C4 Coupe', year: 2018, price_usd: 8330, price_eur: 8330 },
@@ -22,7 +24,6 @@ const hot = new Handsontable(container, {
   columns: [
     {
       data: 'car',
-      // 1st column is simple text, no special options here
     },
     {
       data: 'year',
@@ -33,7 +34,7 @@ const hot = new Handsontable(container, {
       type: 'numeric',
       numericFormat: {
         pattern: '$0,0.00',
-        culture: 'en-US', // this is the default culture, set up for USD
+        culture: 'en-US',
       },
       allowEmpty: false,
     },
@@ -42,8 +43,7 @@ const hot = new Handsontable(container, {
       type: 'numeric',
       numericFormat: {
         pattern: '0,0.00 $',
-        culture: 'de-DE', // use this for EUR (German),
-        // more cultures available on http://numbrojs.com/languages.html
+        culture: 'de-DE',
       },
     },
   ],

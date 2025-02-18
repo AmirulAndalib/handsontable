@@ -5,7 +5,11 @@ metaTitle: Custom cell renderer - Angular Data Grid | Handsontable
 description: Create a custom cell renderer, and use it in your Angular data grid by declaring it as a function.
 permalink: /angular-custom-renderer-example
 canonicalUrl: /angular-custom-renderer-example
+react:
+  id: ntsul6e8
+  metaTitle: Custom cell renderer - Angular Data Grid | Handsontable
 searchCategory: Guides
+category: Integrate with Angular
 ---
 
 # Custom renderer in Angular
@@ -21,7 +25,6 @@ The following example is an implementation of `@handsontable/angular` with a cus
 ::: example :angular --html 1 --js 2
 
 @[code](@/content/guides/integrate-with-angular/angular-custom-renderer-example/angular/example1.html)
-
 @[code](@/content/guides/integrate-with-angular/angular-custom-renderer-example/angular/example1.js)
 
 :::
@@ -30,7 +33,11 @@ The following example is an implementation of `@handsontable/angular` with a cus
 
 ### Related guides
 
+<div class="boxes-list gray">
+
 - [Cell renderer](@/guides/cell-functions/cell-renderer/cell-renderer.md)
+
+</div>
 
 ### Related API reference
 

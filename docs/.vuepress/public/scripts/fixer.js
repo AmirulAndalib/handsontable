@@ -89,11 +89,18 @@
       } else if (key === 'hyperformula') {
         ns = 'HyperFormula';
 
-      } else if (key === 'react-dom') {
+      } else if (key === 'react-dom/client') {
         ns = 'ReactDOM';
 
       } else if (key === 'react-colorful') {
         return window.exports;
+
+      }
+      else if (key === '@handsontable/angular') {
+        ns = 'Handsontable.angular';
+
+      } else if (key === '@handsontable/react-wrapper') {
+        ns = 'Handsontable.react';
 
       } else if (key === '@handsontable/react') {
         ns = 'Handsontable.react';
@@ -113,7 +120,7 @@
       } else if (key === 'vue-class-component') {
         ns = 'VueClassComponent';
 
-      } else if (/^handsontable\/dist\/.+\.css$/.test(key)) { // ignore CSS imports
+      } else if (/^handsontable\/dist|styles\/.+\.css$/.test(key)) { // ignore CSS imports
         ns = '';
 
       } else if (key === 'numbro') {
@@ -190,6 +197,9 @@
               moduleToReturn[camelCase] = moduleToReturn[rendererKey];
             }
           });
+
+        } else if (ns === 'HyperFormula') {
+          moduleToReturn.HyperFormula = HyperFormula;
         }
 
         // Covers default import expressions

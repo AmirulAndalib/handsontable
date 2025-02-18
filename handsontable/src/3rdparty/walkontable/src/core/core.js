@@ -1,5 +1,6 @@
 import Event from '../event';
 import Overlays from '../overlays';
+import { CLONE_TYPES } from '../overlay';
 import Settings from '../settings';
 import MasterTable from '../table/master';
 import Viewport from '../viewport';
@@ -7,6 +8,7 @@ import CoreAbstract from './_base';
 import { SelectionManager } from '../selection/manager';
 import { objectEach } from '../../../../helpers/object';
 import { addClass, removeClass } from '../../../../helpers/dom/element';
+import { StylesHandler } from '../utils/stylesHandler';
 
 /**
  * @class Walkontable
@@ -18,6 +20,8 @@ export default class Walkontable extends CoreAbstract {
    */
   constructor(table, settings) {
     super(table, new Settings(settings));
+
+    this.stylesHandler = new StylesHandler(this.domBindings);
 
     const facadeGetter = this.wtSettings.getSetting('facade', this); // todo rethink. I would like to have no access to facade from the internal scope.
 
@@ -58,6 +62,22 @@ export default class Walkontable extends CoreAbstract {
     });
     removeClass(this.wtTable.wtRootElement.parentNode, allClassNames);
     addClass(this.wtTable.wtRootElement.parentNode, newClassNames);
+  }
+
+  /**
+   * Gets the overlay instance by its name.
+   *
+   * @param {'inline_start'|'top'|'top_inline_start_corner'|'bottom'|'bottom_inline_start_corner'} overlayName The overlay name.
+   * @returns {Overlay | null}
+   */
+  getOverlayByName(overlayName) {
+    if (!CLONE_TYPES.includes(overlayName)) {
+      return null;
+    }
+
+    const camelCaseOverlay = overlayName.replace(/_([a-z])/g, match => match[1].toUpperCase());
+
+    return this.wtOverlays[`${camelCaseOverlay}Overlay`] ?? null;
   }
 
   /**

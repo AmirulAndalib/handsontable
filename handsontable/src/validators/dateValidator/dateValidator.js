@@ -38,10 +38,8 @@ export function dateValidator(value, callback) {
   if (isValidDate && !isValidFormat) {
     if (this.correctFormat === true) { // if format correction is enabled
       const correctedValue = correctFormat(valueToValidate, this.dateFormat);
-      const row = this.instance.toVisualRow(this.row);
-      const column = this.instance.toVisualColumn(this.col);
 
-      this.instance.setDataAtCell(row, column, correctedValue, 'dateValidator');
+      this.instance.setDataAtCell(this.visualRow, this.visualCol, correctedValue, 'dateValidator');
       valid = true;
     } else {
       valid = false;
@@ -63,7 +61,7 @@ dateValidator.VALIDATOR_TYPE = VALIDATOR_TYPE;
 export function correctFormat(value, dateFormat) {
   const dateFromDate = moment(getNormalizedDate(value));
   const dateFromMoment = moment(value, dateFormat);
-  const isAlphanumeric = value.search(/[A-z]/g) > -1;
+  const isAlphanumeric = value.search(/[A-Za-z]/g) > -1;
   let date;
 
   if ((dateFromDate.isValid() && dateFromDate.format('x') === dateFromMoment.format('x')) ||

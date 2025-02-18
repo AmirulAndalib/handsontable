@@ -1,7 +1,8 @@
 import { useRef } from 'react';
-import { HotTable } from '@handsontable/react';
+import { HotTable } from '@handsontable/react-wrapper';
 import { registerAllModules } from 'handsontable/registry';
-import 'handsontable/dist/handsontable.full.min.css';
+import 'handsontable/styles/handsontable.css';
+import 'handsontable/styles/ht-theme-main.css';
 
 // register Handsontable's modules
 registerAllModules();
@@ -10,9 +11,12 @@ const ExampleComponent = () => {
   const hotTableComponentRef = useRef(null);
   const sort = () => {
     // get the `MultiColumnSorting` plugin
-    const multiColumnSorting = hotTableComponentRef.current.hotInstance.getPlugin('multiColumnSorting');
+    const multiColumnSorting =
+      hotTableComponentRef.current?.hotInstance?.getPlugin(
+        'multiColumnSorting'
+      );
 
-    multiColumnSorting.sort([
+    multiColumnSorting?.sort([
       {
         column: 0,
         sortOrder: 'asc',

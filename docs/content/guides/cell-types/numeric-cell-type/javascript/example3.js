@@ -2,7 +2,8 @@ import Handsontable from 'handsontable';
 import numbro from 'numbro';
 import jaJP from 'numbro/languages/ja-JP';
 import trTR from 'numbro/languages/tr-TR';
-import 'handsontable/dist/handsontable.full.min.css';
+import 'handsontable/styles/handsontable.css';
+import 'handsontable/styles/ht-theme-main.css';
 
 // register the languages you need
 numbro.registerLanguage(jaJP);
@@ -20,7 +21,8 @@ const formatTR = {
 };
 
 const container = document.querySelector('#example3');
-const hot = new Handsontable(container, {
+
+new Handsontable(container, {
   data: [
     {
       productName: 'Product A',
@@ -34,26 +36,26 @@ const hot = new Handsontable(container, {
     },
     {
       productName: 'Product C',
-      JP_price: 3120.10,
-      TR_price: 435.20,
+      JP_price: 3120.1,
+      TR_price: 435.2,
     },
   ],
   columns: [
     {
       data: 'productName',
       type: 'text',
-      width: '120',
+      width: '150',
     },
     {
       data: 'JP_price',
       type: 'numeric',
-      width: '120',
+      width: '150',
       numericFormat: formatJP,
     },
     {
       data: 'TR_price',
       type: 'numeric',
-      width: '120',
+      width: '150',
       numericFormat: formatTR,
     },
   ],

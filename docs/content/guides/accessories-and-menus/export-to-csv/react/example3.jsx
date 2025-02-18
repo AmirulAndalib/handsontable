@@ -1,37 +1,37 @@
-import { useRef, useEffect } from 'react';
-import { HotTable } from '@handsontable/react';
+import { useRef } from 'react';
+import { HotTable } from '@handsontable/react-wrapper';
 import { registerAllModules } from 'handsontable/registry';
-import 'handsontable/dist/handsontable.full.min.css';
+import 'handsontable/styles/handsontable.css';
+import 'handsontable/styles/ht-theme-main.css';
 
 // register Handsontable's modules
 registerAllModules();
 
 const ExampleComponent = () => {
   const hotRef = useRef(null);
+  const buttonClickCallback = () => {
+    const hot = hotRef.current?.hotInstance;
+    const exportPlugin = hot?.getPlugin('exportFile');
+    const exportedString = exportPlugin?.exportAsString('csv', {
+      bom: false,
+      columnDelimiter: ',',
+      columnHeaders: false,
+      exportHiddenColumns: true,
+      exportHiddenRows: true,
+      rowDelimiter: '\r\n',
+      rowHeaders: true,
+    });
 
-  let buttonClickCallback;
-
-  useEffect(() => {
-    const hot = hotRef.current.hotInstance;
-    const exportPlugin = hot.getPlugin('exportFile');
-
-    buttonClickCallback = () => {
-      const exportedString = exportPlugin.exportAsString('csv', {
-        bom: false,
-        columnDelimiter: ',',
-        columnHeaders: false,
-        exportHiddenColumns: true,
-        exportHiddenRows: true,
-        rowDelimiter: '\r\n',
-        rowHeaders: true
-      });
-
-      console.log(exportedString);
-    };
-  });
+    console.log(exportedString);
+  };
 
   return (
     <>
+      <div className="controls">
+        <button id="export-string" onClick={() => buttonClickCallback()}>
+          Export as a string
+        </button>
+      </div>
       <HotTable
         ref={hotRef}
         data={[
@@ -52,9 +52,6 @@ const ExampleComponent = () => {
         autoWrapCol={true}
         licenseKey="non-commercial-and-evaluation"
       />
-      <div className="controls">
-        <button id="export-string" onClick={(...args) => buttonClickCallback(...args)}>Export as a string</button>
-      </div>
     </>
   );
 };

@@ -1,5 +1,6 @@
 import { fastInnerText } from '../../../helpers/dom/element';
 import { objectEach } from '../../../helpers/object';
+
 /**
  * @todo Describe options.
  * @typedef SettingsPure
@@ -12,12 +13,10 @@ import { objectEach } from '../../../helpers/object';
  * @property {Option} currentRowClassName Option `currentRowClassName`.
  * @property {Option} data Option `data`.
  * @property {Option} defaultColumnWidth Option `defaultColumnWidth`.
- * @property {Option} defaultRowHeight Option `defaultRowHeight`.
  * @property {Option} externalRowCalculator Option `externalRowCalculator`.
  * @property {Option} fixedColumnsStart Option `fixedColumnsStart`.
  * @property {Option} fixedRowsBottom Option `fixedRowsBottom`.
  * @property {Option} fixedRowsTop Option `fixedRowsTop`.
- * @property {Option} freezeOverlays Option `freezeOverlays`.
  * @property {Option} groups Option `groups`.
  * @property {Option} hideBorderOnMouseDownOver Option `hideBorderOnMouseDownOver`.
  * @property {Option} isRtl Option `isRtl`.
@@ -26,17 +25,16 @@ import { objectEach } from '../../../helpers/object';
  * @property {Option} onBeforeHighlightingColumnHeader Option `onBeforeHighlightingColumnHeader`.
  * @property {Option} onBeforeHighlightingRowHeader Option `onBeforeHighlightingRowHeader`.
  * @property {Option} onBeforeRemoveCellClassNames Option `onBeforeRemoveCellClassNames`.
- * @property {Option} onBeforeStretchingColumnWidth Option `onBeforeStretchingColumnWidth`.
  * @property {Option} preventOverflow Option `preventOverflow`.
  * @property {Option} preventWheel Option `preventWheel`.
  * @property {Option} renderAllColumns Option `renderAllColumns`.
  * @property {Option} renderAllRows Option `renderAllRows`.
  * @property {Option} rowHeaders Option `rowHeaders`.
- * @property {Option} rowHeight Option `,`.
+ * @property {Option} rowHeightOption `rowHeight`.
+ * @property {Option} rowHeightByOverlayName Option `rowHeightByOverlayName`.
  * @property {Option} shouldRenderBottomOverlay Option `shouldRenderBottomOverlay`.
  * @property {Option} shouldRenderInlineStartOverlay Option `shouldRenderInlineStartOverlay`.
  * @property {Option} shouldRenderTopOverlay Option `shouldRenderTopOverlay`.
- * @property {Option} stretchH Option `stretchH`.
  * @property {Option} table Option `table`.
  * @property {Option} totalColumns Option `totalColumns`.
  * @property {Option} totalRows Option `totalRows`.
@@ -58,6 +56,8 @@ import { objectEach } from '../../../helpers/object';
  * @property {?Option} onCellMouseUp Option `onCellMouseUp`.
  * @property {?Option} onDraw Option `onDraw`.
  * @property {?Option} onModifyGetCellCoords Option `onModifyGetCellCoords`.
+ * @property {?Option} onModifyGetCoordsElement Option `onModifyGetCoordsElement`.
+ * @property {?Option} onModifyGetCoords Option `onModifyGetCoords`.
  * @property {?Option} onModifyRowHeaderWidth Option `onModifyRowHeaderWidth`.
  * @property {?Option} onBeforeViewportScrollHorizontally Option `onBeforeViewportScrollHorizontally`.
  * @property {?Option} onBeforeViewportScrollVertically Option `onBeforeViewportScrollVertically`.
@@ -68,6 +68,8 @@ import { objectEach } from '../../../helpers/object';
  * @property {?Option} selections Option `selections`.
  * @property {?Option} viewportColumnCalculatorOverride Option `viewportColumnCalculatorOverride`.
  * @property {?Option} viewportRowCalculatorOverride Option `viewportRowCalculatorOverride`.
+ * @property {?Option} viewportColumnRenderingThreshold Option `viewportColumnRenderingThreshold`.
+ * @property {?Option} viewportRowRenderingThreshold Option `viewportRowRenderingThreshold`.
  */
 
 /**
@@ -131,7 +133,6 @@ export default class Settings {
       isDataViewInstance: true,
       // presentation mode
       externalRowCalculator: false,
-      stretchH: 'none', // values: all, last, none
       currentRowClassName: null,
       currentColumnClassName: null,
       preventOverflow() {
@@ -141,7 +142,6 @@ export default class Settings {
 
       // data source
       data: undefined,
-      freezeOverlays: false,
       // Number of renderable columns for the left overlay.
       fixedColumnsStart: 0,
       // Number of renderable rows for the top overlay.
@@ -186,12 +186,16 @@ export default class Settings {
       rowHeight() {
         // return undefined means use default size for the rendered cell content
       },
-      defaultRowHeight: 23,
+      rowHeightByOverlayName() {
+        // return undefined means use default size for the rendered cell content
+      },
       defaultColumnWidth: 50,
       selections: null,
       hideBorderOnMouseDownOver: false,
       viewportRowCalculatorOverride: null,
       viewportColumnCalculatorOverride: null,
+      viewportRowRenderingThreshold: null,
+      viewportColumnRenderingThreshold: null,
 
       // callbacks
       onCellMouseDown: null,
@@ -218,9 +222,10 @@ export default class Settings {
       //
       onBeforeTouchScroll: null,
       onAfterMomentumScroll: null,
-      onBeforeStretchingColumnWidth: width => width,
       onModifyRowHeaderWidth: null,
       onModifyGetCellCoords: null,
+      onModifyGetCoordsElement: null,
+      onModifyGetCoords: null,
       onBeforeHighlightingRowHeader: sourceRow => sourceRow,
       onBeforeHighlightingColumnHeader: sourceCol => sourceCol,
 

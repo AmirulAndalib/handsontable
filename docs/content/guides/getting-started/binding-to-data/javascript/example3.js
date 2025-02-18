@@ -1,5 +1,6 @@
 import Handsontable from 'handsontable';
-import 'handsontable/dist/handsontable.full.min.css';
+import 'handsontable/styles/handsontable.css';
+import 'handsontable/styles/ht-theme-main.css';
 
 const container = document.querySelector('#example3');
 const data = [
@@ -10,7 +11,7 @@ const data = [
   { id: 5, name: 'Michael Fair', address: '' },
 ];
 
-const hot = new Handsontable(container, {
+new Handsontable(container, {
   data,
   colHeaders: true,
   height: 'auto',
@@ -18,5 +19,5 @@ const hot = new Handsontable(container, {
   minSpareRows: 1,
   autoWrapRow: true,
   autoWrapCol: true,
-  licenseKey: 'non-commercial-and-evaluation'
+  licenseKey: 'non-commercial-and-evaluation',
 });

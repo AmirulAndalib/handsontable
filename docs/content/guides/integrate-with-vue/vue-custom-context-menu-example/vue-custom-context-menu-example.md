@@ -5,7 +5,11 @@ metaTitle: Custom context menu - Vue 2 Data Grid | Handsontable
 description: Customize the context menu of your Vue 2 data grid, by creating a custom function for each menu item.
 permalink: /vue-custom-context-menu-example
 canonicalUrl: /vue-custom-context-menu-example
+react:
+  id: 6218j2a1
+  metaTitle: Custom context menu - Vue 2 Data Grid | Handsontable
 searchCategory: Guides
+category: Integrate with Vue 2
 ---
 
 # Custom context menu in Vue 2
@@ -29,14 +33,22 @@ The following example implements the `@handsontable/vue` component, adding a cus
 
 ### Related guides
 
+<div class="boxes-list gray">
+
 - [Context menu](@/guides/accessories-and-menus/context-menu/context-menu.md)
 - [Adding comments via the context menu](@/guides/cell-features/comments/comments.md#add-comments-via-the-context-menu)
 - [Clipboard: Context menu](@/guides/cell-features/clipboard/clipboard.md#context-menu)
 - [Icon pack](@/guides/accessories-and-menus/icon-pack/icon-pack.md)
 
+</div>
+
 ### Related blog articles
 
+<div class="boxes-list">
+
 - [Customize Handsontable context menu](https://handsontable.com/blog/customize-handsontable-context-menu)
+
+</div>
 
 ### Related API reference
 

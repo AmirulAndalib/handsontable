@@ -1,132 +1,171 @@
-import Handsontable from "handsontable/base";
-import "handsontable/dist/handsontable.css";
-import "@handsontable/pikaday/css/pikaday.css";
+import "./styles/styles.css";
 
-import { generateExampleData, isArabicDemoEnabled } from "./utils";
-import { progressBarRenderer, starRenderer } from "./customRenderers";
-import "./styles.css";
-import { registerLanguageDictionary, arAR } from "handsontable/i18n";
+// Import JavaScript modules
+import Navigo from 'navigo';
+import { initializeDataGrid } from './datagrid';
+import { initializeTwoTablesDemo } from './demos/twoTables/twoTablesDemo';
+import { initializeCellTypeDemo } from './demos/cellTypes/cellTypesDemo';
+import { initializeArabicRtlDemo } from './demos/arabicRtl/arabicRtlDemo';
+import { initializeCustomStyleDemo } from './demos/customStyle/customStyleDemo';
+import { initializeMergedCellsDemo } from './demos/mergedCells/mergedCellsDemo';
+import { initializeNestedHeadersDemo } from './demos/nestedHeaders/nestedHeadersDemo';
+import { initializeNestedRowsDemo } from './demos/nestedRows/nestedRowsDemo';
+import { initializeComplexDemo } from './demos/complex/complexDemo';
 
-// choose cell types you want to use and import them
-import {
-  registerCellType,
-  CheckboxCellType,
-  DateCellType,
-  DropdownCellType,
-  NumericCellType,
-} from "handsontable/cellTypes";
+// Function to dynamically load CSS
+function loadCSS(href) {
+  const link = document.createElement('link');
+  link.rel = 'stylesheet';
+  link.href = href;
+  link.className = 'dynamic-css';
 
-import {
-  registerPlugin,
-  AutoColumnSize,
-  ContextMenu,
-  CopyPaste,
-  DropdownMenu,
-  Filters,
-  HiddenColumns,
-  HiddenRows,
-  ManualRowMove,
-  MergeCells,
-  MultiColumnSorting,
-  UndoRedo,
-} from 'handsontable/plugins';
+  return new Promise((resolve, reject) => {
+    link.onload = resolve;
+    link.onerror = reject;
+    document.head.appendChild(link);
+  });
+}
 
-// register imported cell types and plugins
-registerPlugin(AutoColumnSize);
-registerPlugin(ContextMenu);
-registerPlugin(CopyPaste);
-registerPlugin(DropdownMenu);
-registerPlugin(Filters);
-registerPlugin(HiddenColumns);
-registerPlugin(HiddenRows);
-registerPlugin(ManualRowMove);
-registerPlugin(MergeCells);
-registerPlugin(MultiColumnSorting);
-registerPlugin(UndoRedo);
+// Function to remove dynamically loaded CSS
+function removeCSS() {
+  const links = document.querySelectorAll('link.dynamic-css');
+  links.forEach(link => link.remove());
+}
 
-// register imported cell types and plugins
-registerCellType(DateCellType);
-registerCellType(DropdownCellType);
-registerCellType(CheckboxCellType);
-registerCellType(NumericCellType);
+function loadThemeCSS() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const theme = urlParams.get('theme');
+  const baseLink = document.createElement('link');
+  const themeLink = document.createElement('link');
 
-registerLanguageDictionary(arAR);
+  baseLink.rel = 'stylesheet';
+  baseLink.className = 'dynamic-css';
+  themeLink.rel = 'stylesheet';
+  themeLink.className = 'dynamic-css';
 
-import {
-  alignHeaders,
-  addClassesToRows,
-  changeCheckboxCell,
-  drawCheckboxInRowHeaders
-} from "./hooksCallbacks";
+  if (theme === 'main' || theme === 'main-dark') {
+    baseLink.href = `/assets/handsontable/styles/handsontable.css`;
+    themeLink.href = `/assets/handsontable/styles/ht-theme-main.css`;
 
-const example = document.getElementById("example");
+  } else if (theme === 'horizon' || theme === 'horizon-dark') {
+    baseLink.href = `/assets/handsontable/styles/handsontable.css`;
+    themeLink.href = `/assets/handsontable/styles/ht-theme-horizon.css`;
 
-new Handsontable(example, {
-  data: generateExampleData(),
-  layoutDirection: isArabicDemoEnabled() ? "rtl" : "ltr",
-  language: isArabicDemoEnabled() ? arAR.languageCode : "en-US",
-  height: 450,
-  colWidths: [140, 192, 100, 90, 90, 110, 97, 100, 126],
-  colHeaders: [
-    "Company name",
-    "Name",
-    "Sell date",
-    "In stock",
-    "Qty",
-    "Progress",
-    "Rating",
-    "Order ID",
-    "Country"
-  ],
-  columns: [
-    { data: 1, type: "text" },
-    { data: 3, type: "text" },
-    {
-      data: 4,
-      type: "date",
-      allowInvalid: false,
-      dateFormat: isArabicDemoEnabled() ? "M/D/YYYY" : "DD/MM/YYYY",
+  } else {
+    baseLink.href = `/assets/handsontable/dist/handsontable.full.css`;
+  }
+
+  const baseLinkPromise = new Promise((resolve, reject) => {
+    baseLink.onload = resolve;
+    baseLink.onerror = reject;
+  });
+  const themeLinkPromise = new Promise((resolve, reject) => {
+    themeLink.onload = resolve;
+    themeLink.onerror = reject;
+  });
+
+  [baseLink, themeLink].forEach((link) => {
+    if (link.href) {
+      document.head.appendChild(link);
+    }
+  });
+
+  return Promise.all([baseLinkPromise, themeLink.href ? themeLinkPromise : null]);
+}
+
+// Initialize the router
+const router = new Navigo('/');
+
+// Define routes
+router
+  .on({
+    '/': function () {
+      removeCSS();
+
+      Promise.all([
+        loadCSS('./assets/styles.css'),
+        loadThemeCSS(),
+      ]).then(() => {
+        initializeDataGrid();
+      });
     },
-    {
-      data: 6,
-      type: "checkbox",
-      className: "htCenter"
-    },
-    {
-      data: 7,
-      type: "numeric"
-    },
-    {
-      data: 8,
-      renderer: progressBarRenderer,
-      readOnly: true,
-      className: "htMiddle"
-    },
-    {
-      data: 9,
-      renderer: starRenderer,
-      readOnly: true,
-      className: "star htCenter"
-    },
-    { data: 5, type: "text" },
-    { data: 2, type: "text" }
-  ],
-  mergeCells: true,
-  dropdownMenu: true,
-  hiddenColumns: {
-    indicators: true
-  },
-  navigableHeaders: true,
-  contextMenu: true,
-  multiColumnSorting: true,
-  filters: true,
-  rowHeaders: true,
-  manualRowMove: true,
-  afterGetColHeader: alignHeaders,
-  afterGetRowHeader: drawCheckboxInRowHeaders,
-  afterOnCellMouseDown: changeCheckboxCell,
-  beforeRenderer: addClassesToRows,
-  licenseKey: "non-commercial-and-evaluation"
-});
+    '/two-tables-demo': function () {
+      removeCSS();
 
-console.log(`Handsontable: v${Handsontable.version} (${Handsontable.buildDate})`);
+      Promise.all([
+        loadCSS('./assets/two-tables-demo.css'),
+        loadThemeCSS(),
+      ]).then(() => {
+        initializeTwoTablesDemo();
+      });
+    },
+    '/cell-types-demo': function () {
+      removeCSS();
+
+      Promise.all([
+        loadCSS('./assets/cell-types-demo.css'),
+        loadThemeCSS(),
+      ]).then(() => {
+        initializeCellTypeDemo();
+      });
+    },
+    '/arabic-rtl-demo': function () {
+      removeCSS();
+
+      Promise.all([
+        loadThemeCSS(),
+      ]).then(() => {
+        initializeArabicRtlDemo();
+      });
+    },
+    '/custom-style-demo': function () {
+      removeCSS();
+
+      Promise.all([
+        loadCSS('./assets/custom-style-demo.css'),
+        loadThemeCSS(),
+      ]).then(() => {
+        initializeCustomStyleDemo();
+      });
+    },
+    '/merged-cells-demo': function () {
+      removeCSS();
+
+      Promise.all([
+        loadCSS('./assets/merged-cells-demo.css'),
+        loadThemeCSS(),
+      ]).then(() => {
+        initializeMergedCellsDemo();
+      });
+    },
+    '/nested-headers-demo': function () {
+      removeCSS();
+
+      Promise.all([
+        loadCSS('./assets/nested-headers-demo.css'),
+        loadThemeCSS(),
+      ]).then(() => {
+        initializeNestedHeadersDemo();
+      });
+    },
+    '/nested-rows-demo': function () {
+      removeCSS();
+
+      Promise.all([
+        loadCSS('./assets/nested-rows-demo.css'),
+        loadThemeCSS(),
+      ]).then(() => {
+        initializeNestedRowsDemo();
+      });
+    },
+    '/complex-demo': function () {
+      removeCSS();
+
+      Promise.all([
+        loadThemeCSS(),
+      ]).then(() => {
+        initializeComplexDemo();
+      });
+    },
+  })
+  .resolve();

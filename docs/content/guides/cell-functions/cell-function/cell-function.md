@@ -9,6 +9,7 @@ react:
   id: i2sqtwh6
   metaTitle: Cell functions - React Data Grid | Handsontable
 searchCategory: Guides
+category: Cell functions
 ---
 
 # Cell functions
@@ -88,7 +89,8 @@ the `renderer`, `editor` or `validator` functions defined for that cell type. Fo
 
 ```js
 import Handsontable from 'handsontable';
-import 'handsontable/dist/handsontable.full.min.css';
+import 'handsontable/styles/handsontable.css';
+import 'handsontable/styles/ht-theme-main.css';
 
 const container = document.querySelector('#container');
 const hot = new Handsontable(container, {
@@ -143,10 +145,14 @@ const ExampleComponent = () => {
 
 ### Related guides
 
+<div class="boxes-list gray">
+
 - [Cell editor](@/guides/cell-functions/cell-editor/cell-editor.md)
 - [Cell renderer](@/guides/cell-functions/cell-renderer/cell-renderer.md)
 - [Cell validator](@/guides/cell-functions/cell-validator/cell-validator.md)
 - [Cell type](@/guides/cell-types/cell-type/cell-type.md)
+
+</div>
 
 ### Related API reference
 

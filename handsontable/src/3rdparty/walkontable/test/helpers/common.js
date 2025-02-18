@@ -1,3 +1,28 @@
+/**
+ * Test context object.
+ *
+ * @type {object}
+ */
+const specContext = {};
+
+beforeEach(function() {
+  specContext.spec = this;
+});
+
+afterEach(() => {
+  specContext.spec = null;
+  window.scrollTo(0, 0);
+});
+
+beforeAll(() => {
+  // Make the test more predictable by hiding the test suite dots
+  $('.jasmine_html-reporter').hide();
+});
+afterAll(() => {
+  // After the test are finished show the test suite dots
+  $('.jasmine_html-reporter').show();
+});
+
 /* eslint-disable jsdoc/require-description-complete-sentence */
 /**
  * The function allows you to run the test suites based on different parameters (object configuration, datasets etc).
@@ -47,13 +72,6 @@ export function sleep(delay = 100) {
 }
 
 /**
- * Test context object.
- *
- * @type {object}
- */
-const specContext = {};
-
-/**
  * Get the test case context.
  *
  * @returns {object|null}
@@ -87,7 +105,46 @@ export function walkontable(options, table) {
 
   currentSpec.wotInstance = new Walkontable.Core(options);
 
+  // Walkontable needs to have a theme initialized to properly render the table.
+  // (running `useTheme` without a theme name will use the classic theme)
+  currentSpec.wotInstance.stylesHandler.useTheme();
+
   return currentSpec.wotInstance;
+}
+
+/**
+ * @returns {Overlay} Returns the table's overlay instance.
+ */
+export function topOverlay() {
+  return wot().wtOverlays.topOverlay;
+}
+
+/**
+ * @returns {Overlay} Returns the table's overlay instance.
+ */
+export function bottomOverlay() {
+  return wot().wtOverlays.bottomOverlay;
+}
+
+/**
+ * @returns {Overlay} Returns the table's overlay instance.
+ */
+export function topInlineStartCornerOverlay() {
+  return wot().wtOverlays.topInlineStartCornerOverlay;
+}
+
+/**
+ * @returns {Overlay} Returns the table's overlay instance.
+ */
+export function inlineStartOverlay() {
+  return wot().wtOverlays.inlineStartOverlay;
+}
+
+/**
+ * @returns {Overlay} Returns the table's overlay instance.
+ */
+export function bottomInlineStartCornerOverlay() {
+  return wot().wtOverlays.bottomInlineStartCornerOverlay;
 }
 
 /**
@@ -154,24 +211,6 @@ export function getTotalColumns() {
 export function wheelOnElement(elem, deltaX = 0, deltaY = 0) {
   elem.dispatchEvent(new WheelEvent('wheel', { deltaX, deltaY }));
 }
-
-beforeEach(function() {
-  specContext.spec = this;
-});
-
-afterEach(() => {
-  specContext.spec = null;
-  window.scrollTo(0, 0);
-});
-
-beforeAll(() => {
-  // Make the test more predictable by hiding the test suite dots
-  $('.jasmine_html-reporter').hide();
-});
-afterAll(() => {
-  // After the test are finished show the test suite dots
-  $('.jasmine_html-reporter').show();
-});
 
 /**
  * Returns the table width.
@@ -494,4 +533,30 @@ export function expectWtTable(wt, callb, name) {
   }
 
   return expect(callb(wt.wtOverlays[`${name}Overlay`].clone.wtTable)).withContext(`${name}: ${callbAsString}`);
+}
+
+/**
+ * Moves the table's viewport to the specified y scroll position.
+ *
+ * @param {number} y The scroll position.
+ */
+export function setScrollTop(y) {
+  if (wot().wtOverlays.scrollableElement === window) {
+    window.scrollTo(window.scrollX, y);
+  } else {
+    getTableMaster().find('.wtHolder')[0].scrollTop = y;
+  }
+}
+
+/**
+ * Moves the table's viewport to the specified x scroll position.
+ *
+ * @param {number} x The scroll position.
+ */
+export function setScrollLeft(x) {
+  if (wot().wtOverlays.scrollableElement === window) {
+    window.scrollTo(x, window.scrollY);
+  } else {
+    getTableMaster().find('.wtHolder')[0].scrollLeft = x;
+  }
 }

@@ -9,6 +9,7 @@ react:
   id: g5mksyu1
   metaTitle: Row moving - React Data Grid | Handsontable
 searchCategory: Guides
+category: Rows
 ---
 
 # Row moving
@@ -25,9 +26,10 @@ A draggable move handle appears above the selected row header. You can click and
 
 ::: only-for javascript
 
-::: example #example1
+::: example #example1 --js 1 --ts 2
 
 @[code](@/content/guides/rows/row-moving/javascript/example1.js)
+@[code](@/content/guides/rows/row-moving/javascript/example1.ts)
 
 :::
 
@@ -35,9 +37,10 @@ A draggable move handle appears above the selected row header. You can click and
 
 ::: only-for react
 
-::: example #example1 :react
+::: example #example1 :react --js 1 --ts 2
 
 @[code](@/content/guides/rows/row-moving/react/example1.jsx)
+@[code](@/content/guides/rows/row-moving/react/example1.tsx)
 
 :::
 
@@ -51,12 +54,20 @@ Both of these methods trigger the [`beforeRowMove`](@/api/hooks.md#beforerowmove
 
 The [`dragRows`](@/api/manualRowMove.md#dragrows) method has a `dropIndex` parameter, which points to where the elements are being dropped.
 
+<span class="img-invert">
+
 ![dragRows method]({{$basePath}}/img/drag_action.svg)
+
+</span>
 
 
 The [`moveRows`](@/api/manualRowMove.md#moverows) method has a `finalIndex` parameter, which points to where the elements will be placed after the _moving_ action - `finalIndex` being the index of the first moved element.
 
+<span class="img-invert">
+
 ![moveRows method]({{$basePath}}/img/move_action.svg)
+
+</span>
 
 The [`moveRows`](@/api/manualRowMove.md#moverows) function cannot perform some actions, e.g., more than one element can't be moved to the last position. In this scenario, the move will be cancelled. The Plugin's [`isMovePossible`](@/api/manualRowMove.md#ismovepossible) API method and the `movePossible` parameters `beforeRowMove` and `afterRowMove` hooks help in determine such situations.
 

@@ -1,17 +1,20 @@
-import { Component, ViewEncapsulation } from "@angular/core";
+import { Component, ViewEncapsulation, CUSTOM_ELEMENTS_SCHEMA } from "@angular/core";
 import { getData } from "./utils/constants";
+import { HotTableModule } from '@handsontable/angular';
 
-import { alignHeaders, addClassesToRows } from "./utils/hooks-callbacks";
+import { addClassesToRows } from "./utils/hooks-callbacks";
 
 @Component({
+  standalone: true,
   encapsulation: ViewEncapsulation.None,
   selector: "data-grid",
   templateUrl: "./data-grid.component.html",
   styleUrls: ["./data-grid.scss"],
+  imports: [HotTableModule],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
 export class DataGridComponent {
   dataset = getData();
-  alignHeaders = alignHeaders;
   addClassesToRows = addClassesToRows;
   colHeaders = [
     "Company name",

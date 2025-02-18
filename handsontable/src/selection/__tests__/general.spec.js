@@ -139,9 +139,9 @@ describe('Selection', () => {
 
     hot.selectCell(1, 1, 2, 2);
 
-    expect(Handsontable.dom.getComputedStyle(hot.rootElement.querySelector('.ht_master .htBorders .current')).zIndex)
+    expect(getComputedStyle(hot.rootElement.querySelector('.ht_master .htBorders .current')).zIndex)
       .toBe('10');
-    expect(Handsontable.dom.getComputedStyle(hot.rootElement.querySelector('.ht_master .htBorders .area')).zIndex)
+    expect(getComputedStyle(hot.rootElement.querySelector('.ht_master .htBorders .area')).zIndex)
       .toBe('8');
   });
 
@@ -418,9 +418,9 @@ describe('Selection', () => {
 
     selectCell(0, 0);
 
-    hot.addHook('modifyTransformEnd', (coords) => {
-      coords.col += 2;
-      coords.row += 1;
+    hot.addHook('modifyTransformEnd', (delta) => {
+      delta.col += 2;
+      delta.row += 1;
     });
     keyDownUp(['shift', 'arrowdown']);
 
@@ -589,90 +589,6 @@ describe('Selection', () => {
     cellVerticalPosition = hot.getCell(1, 0).offsetTop;
     topBorder = $('.wtBorder.current')[0];
     expect(topBorder.offsetTop).toEqual(cellVerticalPosition - borderOffsetInPixels);
-  });
-
-  it('should scroll viewport properly when selecting singe cell beyond the table boundaries (when some columns are hidden)', () => {
-    const hot = handsontable({
-      width: 200,
-      height: 200,
-      startRows: 20,
-      startCols: 20,
-      hiddenColumns: {
-        columns: [0, 1, 2]
-      }
-    });
-
-    selectCell(0, 15);
-
-    expect(hot.view._wt.wtTable.getLastVisibleColumn()).toBe(12);
-  });
-
-  it('should scroll viewport properly when selecting multiple cells beyond the table boundaries (when some columns are hidden)', () => {
-    const hot = handsontable({
-      width: 200,
-      height: 200,
-      startRows: 20,
-      startCols: 20,
-      hiddenColumns: {
-        columns: [0, 1, 2]
-      }
-    });
-
-    selectCells([[0, 4], [0, 15]]);
-
-    expect(hot.view._wt.wtTable.getLastVisibleColumn()).toBe(12);
-  });
-
-  it('should scroll viewport properly when selecting singe column beyond the table boundaries (when some columns are hidden)', () => {
-    const hot = handsontable({
-      width: 200,
-      height: 200,
-      startRows: 20,
-      startCols: 20,
-      hiddenColumns: {
-        columns: [0, 1, 2]
-      }
-    });
-
-    selectColumns(15);
-
-    expect(hot.view._wt.wtTable.getLastVisibleColumn()).toBe(12);
-  });
-
-  it('selection should move down throughout the table when the last row is hidden', () => {
-    handsontable({
-      data: Handsontable.helper.createSpreadsheetData(3, 3),
-      autoWrapCol: true,
-      autoWrapRow: true,
-      hiddenRows: {
-        rows: [2]
-      }
-    });
-
-    selectCell(0, 0); // Select cell "A1"
-
-    keyDownUp('arrowdown'); // Move selection down to the end of the table
-    keyDownUp('arrowdown'); // Move selection to the next column, to the cell "B1"
-
-    expect(getSelected()).toEqual([[0, 1, 0, 1]]);
-  });
-
-  it('selection should move to the right throughout the table when the last column is hidden', () => {
-    handsontable({
-      data: Handsontable.helper.createSpreadsheetData(3, 3),
-      autoWrapCol: true,
-      autoWrapRow: true,
-      hiddenColumns: {
-        columns: [2]
-      }
-    });
-
-    selectCell(0, 0); // Select cell "A1"
-
-    keyDownUp('arrowright'); // Move selection to the right edge of the table
-    keyDownUp('arrowright'); // Move selection to first column, to the cell "A2"
-
-    expect(getSelected()).toEqual([[1, 0, 1, 0]]);
   });
 
   it('should keep viewport when removing last column', () => {
@@ -1295,7 +1211,12 @@ describe('Selection', () => {
       selectCells([[2, 2, 5, 5], [6, 1], [3, 3, 6, 6], [8, 0]]);
       alter('insert_row_above', 1, 3);
 
-      expect(getSelected()).toEqual([[2, 2, 5, 5], [6, 1, 6, 1], [3, 3, 6, 6], [11, 0, 11, 0]]);
+      expect(getSelectedRange()).toEqualCellRange([
+        'highlight: 2,2 from: 2,2 to: 5,5',
+        'highlight: 6,1 from: 6,1 to: 6,1',
+        'highlight: 3,3 from: 3,3 to: 6,6',
+        'highlight: 11,0 from: 11,0 to: 11,0',
+      ]);
       // By design only last selection is interactive.
       expect(`
         |   ║ - : - : - : - : - : - : - :   :   :   |
@@ -1316,18 +1237,74 @@ describe('Selection', () => {
       `).toBeMatchToSelectionPattern();
     });
 
-    it('should transform the header selection down by amount of added rows when they added before the selection', () => {
+    it('should transform the selection down without changing the selection origin direction', () => {
       handsontable({
         rowHeaders: true,
         colHeaders: true,
-        startRows: 10,
+        startRows: 7,
+        startCols: 7
+      });
+
+      selectCells([[5, 3, 4, 1]]);
+      alter('insert_row_above', 1, 2);
+
+      expect(getSelectedRange()).toEqualCellRange(['highlight: 7,3 from: 7,3 to: 6,1']);
+      expect(`
+        |   ║   : - : - : - :   :   :   |
+        |===:===:===:===:===:===:===:===|
+        |   ║   :   :   :   :   :   :   |
+        |   ║   :   :   :   :   :   :   |
+        |   ║   :   :   :   :   :   :   |
+        |   ║   :   :   :   :   :   :   |
+        |   ║   :   :   :   :   :   :   |
+        |   ║   :   :   :   :   :   :   |
+        | - ║   : 0 : 0 : 0 :   :   :   |
+        | - ║   : 0 : 0 : A :   :   :   |
+        |   ║   :   :   :   :   :   :   |
+      `).toBeMatchToSelectionPattern();
+    });
+
+    it('should transform the selection down without changing the origin focus position', () => {
+      const hot = handsontable({
+        rowHeaders: true,
+        colHeaders: true,
+        startRows: 7,
+        startCols: 7
+      });
+
+      selectCells([[5, 3, 3, 1]]);
+      hot.selection.setRangeFocus(hot._createCellCoords(4, 2));
+      alter('insert_row_above', 1, 2);
+
+      expect(getSelectedRange()).toEqualCellRange(['highlight: 6,2 from: 7,3 to: 5,1']);
+      expect(`
+        |   ║   : - : - : - :   :   :   |
+        |===:===:===:===:===:===:===:===|
+        |   ║   :   :   :   :   :   :   |
+        |   ║   :   :   :   :   :   :   |
+        |   ║   :   :   :   :   :   :   |
+        |   ║   :   :   :   :   :   :   |
+        |   ║   :   :   :   :   :   :   |
+        | - ║   : 0 : 0 : 0 :   :   :   |
+        | - ║   : 0 : A : 0 :   :   :   |
+        | - ║   : 0 : 0 : 0 :   :   :   |
+        |   ║   :   :   :   :   :   :   |
+      `).toBeMatchToSelectionPattern();
+    });
+
+    it('should transform the header selection down by amount of added rows when they added before the selection', () => {
+      const hot = handsontable({
+        rowHeaders: true,
+        colHeaders: true,
+        startRows: 7,
         startCols: 10
       });
 
       selectRows(3, 5);
       alter('insert_row_above', 1, 3);
 
-      expect(getSelected()).toEqual([[6, -1, 8, 9]]);
+      expect(hot.selection.isSelectedByRowHeader()).toBe(true);
+      expect(getSelectedRange()).toEqualCellRange(['highlight: 6,0 from: 6,-1 to: 8,9']);
       expect(`
         |   ║ - : - : - : - : - : - : - : - : - : - |
         |===:===:===:===:===:===:===:===:===:===:===|
@@ -1340,9 +1317,6 @@ describe('Selection', () => {
         | * ║ A : 0 : 0 : 0 : 0 : 0 : 0 : 0 : 0 : 0 |
         | * ║ 0 : 0 : 0 : 0 : 0 : 0 : 0 : 0 : 0 : 0 |
         | * ║ 0 : 0 : 0 : 0 : 0 : 0 : 0 : 0 : 0 : 0 |
-        |   ║   :   :   :   :   :   :   :   :   :   |
-        |   ║   :   :   :   :   :   :   :   :   :   |
-        |   ║   :   :   :   :   :   :   :   :   :   |
         |   ║   :   :   :   :   :   :   :   :   :   |
       `).toBeMatchToSelectionPattern();
     });
@@ -1358,7 +1332,12 @@ describe('Selection', () => {
       selectCells([[2, 2, 5, 5], [6, 1], [3, 3, 6, 6], [8, 0]]);
       alter('insert_row_above', 9, 3);
 
-      expect(getSelected()).toEqual([[2, 2, 5, 5], [6, 1, 6, 1], [3, 3, 6, 6], [8, 0, 8, 0]]);
+      expect(getSelectedRange()).toEqualCellRange([
+        'highlight: 2,2 from: 2,2 to: 5,5',
+        'highlight: 6,1 from: 6,1 to: 6,1',
+        'highlight: 3,3 from: 3,3 to: 6,6',
+        'highlight: 8,0 from: 8,0 to: 8,0',
+      ]);
       expect(`
         |   ║ - : - : - : - : - : - : - :   :   :   |
         |===:===:===:===:===:===:===:===:===:===:===|
@@ -1389,7 +1368,7 @@ describe('Selection', () => {
       selectRows(3, 5);
       alter('insert_row_above', 5, 3);
 
-      expect(getSelected()).toEqual([[3, -1, 5, 9]]);
+      expect(getSelectedRange()).toEqualCellRange(['highlight: 3,0 from: 3,-1 to: 5,9']);
       expect(`
         |   ║ - : - : - : - : - : - : - : - : - : - |
         |===:===:===:===:===:===:===:===:===:===:===|
@@ -1420,7 +1399,12 @@ describe('Selection', () => {
       selectCells([[2, 2, 5, 5], [6, 1], [3, 3, 6, 6], [8, 5]]);
       alter('insert_col_start', 1, 3);
 
-      expect(getSelected()).toEqual([[2, 2, 5, 5], [6, 1, 6, 1], [3, 3, 6, 6], [8, 8, 8, 8]]);
+      expect(getSelectedRange()).toEqualCellRange([
+        'highlight: 2,2 from: 2,2 to: 5,5',
+        'highlight: 6,1 from: 6,1 to: 6,1',
+        'highlight: 3,3 from: 3,3 to: 6,6',
+        'highlight: 8,8 from: 8,8 to: 8,8',
+      ]);
       // By design only last selection is interactive.
       expect(`
         |   ║   : - : - : - : - : - : - :   : - :   :   :   :   |
@@ -1438,8 +1422,59 @@ describe('Selection', () => {
       `).toBeMatchToSelectionPattern();
     });
 
-    it('should transform the header selection right by amount of added columns when they added before the selection', () => {
+    it('should transform the selection right without changing the selection origin direction', () => {
       handsontable({
+        rowHeaders: true,
+        colHeaders: true,
+        startRows: 7,
+        startCols: 7
+      });
+
+      selectCells([[1, 5, 5, 4]]);
+      alter('insert_col_start', 1, 2);
+
+      expect(getSelectedRange()).toEqualCellRange(['highlight: 1,7 from: 1,7 to: 5,6']);
+      expect(`
+        |   ║   :   :   :   :   :   : - : - :   |
+        |===:===:===:===:===:===:===:===:===:===|
+        |   ║   :   :   :   :   :   :   :   :   |
+        | - ║   :   :   :   :   :   : 0 : A :   |
+        | - ║   :   :   :   :   :   : 0 : 0 :   |
+        | - ║   :   :   :   :   :   : 0 : 0 :   |
+        | - ║   :   :   :   :   :   : 0 : 0 :   |
+        | - ║   :   :   :   :   :   : 0 : 0 :   |
+        |   ║   :   :   :   :   :   :   :   :   |
+      `).toBeMatchToSelectionPattern();
+    });
+
+    it('should transform the selection down without changing the origin focus position', () => {
+      const hot = handsontable({
+        rowHeaders: true,
+        colHeaders: true,
+        startRows: 7,
+        startCols: 7
+      });
+
+      selectCells([[1, 5, 5, 4]]);
+      hot.selection.setRangeFocus(hot._createCellCoords(3, 5));
+      alter('insert_col_start', 1, 2);
+
+      expect(getSelectedRange()).toEqualCellRange(['highlight: 3,7 from: 1,7 to: 5,6']);
+      expect(`
+        |   ║   :   :   :   :   :   : - : - :   |
+        |===:===:===:===:===:===:===:===:===:===|
+        |   ║   :   :   :   :   :   :   :   :   |
+        | - ║   :   :   :   :   :   : 0 : 0 :   |
+        | - ║   :   :   :   :   :   : 0 : 0 :   |
+        | - ║   :   :   :   :   :   : 0 : A :   |
+        | - ║   :   :   :   :   :   : 0 : 0 :   |
+        | - ║   :   :   :   :   :   : 0 : 0 :   |
+        |   ║   :   :   :   :   :   :   :   :   |
+      `).toBeMatchToSelectionPattern();
+    });
+
+    it('should transform the header selection right by amount of added columns when they added before the selection', () => {
+      const hot = handsontable({
         rowHeaders: true,
         colHeaders: true,
         startRows: 10,
@@ -1449,7 +1484,8 @@ describe('Selection', () => {
       selectColumns(3, 5);
       alter('insert_col_start', 1, 3);
 
-      expect(getSelected()).toEqual([[-1, 6, 9, 8]]);
+      expect(hot.selection.isSelectedByColumnHeader()).toBe(true);
+      expect(getSelectedRange()).toEqualCellRange(['highlight: 0,6 from: -1,6 to: 9,8']);
       expect(`
         |   ║   :   :   :   :   :   : * : * : * :   :   :   :   |
         |===:===:===:===:===:===:===:===:===:===:===:===:===:===|
@@ -1477,7 +1513,12 @@ describe('Selection', () => {
       selectCells([[2, 2, 5, 5], [6, 1], [3, 3, 6, 6], [8, 5]]);
       alter('insert_col_start', 6, 3);
 
-      expect(getSelected()).toEqual([[2, 2, 5, 5], [6, 1, 6, 1], [3, 3, 6, 6], [8, 5, 8, 5]]);
+      expect(getSelectedRange()).toEqualCellRange([
+        'highlight: 2,2 from: 2,2 to: 5,5',
+        'highlight: 6,1 from: 6,1 to: 6,1',
+        'highlight: 3,3 from: 3,3 to: 6,6',
+        'highlight: 8,5 from: 8,5 to: 8,5',
+      ]);
       expect(`
         |   ║   : - : - : - : - : - : - :   :   :   :   :   :   |
         |===:===:===:===:===:===:===:===:===:===:===:===:===:===|
@@ -1505,7 +1546,7 @@ describe('Selection', () => {
       selectColumns(3, 5);
       alter('insert_col_start', 5, 3);
 
-      expect(getSelected()).toEqual([[-1, 3, 9, 5]]);
+      expect(getSelectedRange()).toEqualCellRange(['highlight: 0,3 from: -1,3 to: 9,5']);
       expect(`
         |   ║   :   :   : * : * : * :   :   :   :   :   :   :   |
         |===:===:===:===:===:===:===:===:===:===:===:===:===:===|
@@ -1523,7 +1564,7 @@ describe('Selection', () => {
     });
 
     it('should transform removed last column header selection to the last visible column', () => {
-      handsontable({
+      const hot = handsontable({
         rowHeaders: true,
         colHeaders: true,
         startRows: 3,
@@ -1533,6 +1574,7 @@ describe('Selection', () => {
       selectColumns(4, 4);
       alter('remove_col', 4);
 
+      expect(hot.selection.isSelectedByColumnHeader()).toBe(true);
       expect(getSelectedRange()).toEqualCellRange(['highlight: 0,3 from: -1,3 to: 2,3']);
       expect(`
         |   ║   :   :   : * |
@@ -1544,6 +1586,7 @@ describe('Selection', () => {
 
       loadData([[1, 2, 3], [1, 2, 3], [1, 2, 3]]);
 
+      expect(hot.selection.isSelectedByColumnHeader()).toBe(true);
       expect(getSelectedRange()).toEqualCellRange(['highlight: 0,2 from: -1,2 to: 2,2']);
       expect(`
         |   ║   :   : * |
@@ -1587,7 +1630,7 @@ describe('Selection', () => {
     });
 
     it('should transform removed last row header selection to the last visible row', () => {
-      handsontable({
+      const hot = handsontable({
         rowHeaders: true,
         colHeaders: true,
         startRows: 5,
@@ -1597,6 +1640,7 @@ describe('Selection', () => {
       selectRows(4, 4);
       alter('remove_row', 4);
 
+      expect(hot.selection.isSelectedByRowHeader()).toBe(true);
       expect(getSelectedRange()).toEqualCellRange(['highlight: 3,0 from: 3,-1 to: 3,2']);
       expect(`
         |   ║ - : - : - |
@@ -1609,6 +1653,7 @@ describe('Selection', () => {
 
       loadData([[1, 2, 3], [1, 2, 3], [1, 2, 3]]);
 
+      expect(hot.selection.isSelectedByRowHeader()).toBe(true);
       expect(getSelectedRange()).toEqualCellRange(['highlight: 2,0 from: 2,-1 to: 2,2']);
       expect(`
         |   ║ - : - : - |

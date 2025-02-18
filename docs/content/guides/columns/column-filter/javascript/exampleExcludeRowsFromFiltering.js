@@ -1,8 +1,10 @@
 import Handsontable from 'handsontable';
-import 'handsontable/dist/handsontable.full.min.css';
+import 'handsontable/styles/handsontable.css';
+import 'handsontable/styles/ht-theme-main.css';
 
 const container = document.querySelector('#exampleExcludeRowsFromFiltering');
-const handsontableInstance = new Handsontable(container, {
+
+new Handsontable(container, {
   data: [
     {
       brand: 'Gigabox',
@@ -172,10 +174,14 @@ const handsontableInstance = new Handsontable(container, {
   // enable the column menu
   dropdownMenu: true,
   afterFilter() {
-    const filtersRowsMap = this.getPlugin('filters').filtersRowsMap;
+    const filtersPlugin = this.getPlugin('filters');
+    const filtersRowsMap = filtersPlugin.filtersRowsMap;
 
     filtersRowsMap.setValueAtIndex(0, false);
-    filtersRowsMap.setValueAtIndex(filtersRowsMap.indexedValues.length - 1, false);
+    filtersRowsMap.setValueAtIndex(
+      filtersRowsMap.indexedValues.length - 1,
+      false
+    );
   },
   autoWrapRow: true,
   autoWrapCol: true,

@@ -1,8 +1,7 @@
 import Handsontable from 'handsontable';
-import 'handsontable/dist/handsontable.full.min.css';
+import 'handsontable/styles/handsontable.css';
+import 'handsontable/styles/ht-theme-main.css';
 
-const output = document.querySelector('#output');
-const getButton = document.querySelector('#getButton');
 const container = document.querySelector('#example2');
 const hot = new Handsontable(container, {
   data: [
@@ -19,27 +18,27 @@ const hot = new Handsontable(container, {
   width: 'auto',
   height: 'auto',
   colWidths: 100,
-  rowHeights: 23,
   rowHeaders: true,
   colHeaders: true,
   outsideClickDeselects: false,
-  selectionMode: 'multiple', // 'single', 'range' or 'multiple',
+  selectionMode: 'multiple',
   autoWrapRow: true,
   autoWrapCol: true,
-  licenseKey: 'non-commercial-and-evaluation'
+  licenseKey: 'non-commercial-and-evaluation',
 });
 
-getButton.addEventListener('click', (event) => {
+const getButton = document.querySelector('#getButton');
+const output = document.querySelector('#output');
+
+getButton.addEventListener('click', () => {
   const selected = hot.getSelected() || [];
   let data = [];
 
   if (selected.length === 1) {
-  	data = hot.getData(...selected[0]);
+    data = hot.getData(...selected[0]);
   } else {
     for (let i = 0; i < selected.length; i += 1) {
-      const item = selected[i];
-
-      data.push(hot.getData(...item));
+      data.push(hot.getData(...selected[i]));
     }
   }
 
